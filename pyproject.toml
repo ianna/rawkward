@@ -1,0 +1,40 @@
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "rawkward"
+version = "0.1.0"
+description = "Яawkward: A Rust-backed engine for nested, variable-length, columnar data"
+readme = "README.md"
+license = "BSD-3-Clause"
+authors = [
+    { name = "Ianna Osborne", email = "ianna.osborne@cern.ch" }
+]
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "awkward>=2.6,<3",
+    "numpy>=2.0",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Rust",
+    "License :: OSI Approved :: BSD Software License",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Intended Audience :: Science/Research",
+    "Development Status :: 3 - Alpha",
+]
+
+[project.optional-dependencies]
+arrow  = ["pyarrow>=14"]
+remote = []  # pulls the Rust `remote` feature via maturin — no extra Python deps required
+
+[project.urls]
+Repository = "https://github.com/ianna/rawkward"
+"Bug Tracker" = "https://github.com/ianna/rawkward/issues"
+
+[tool.maturin]
+python-source = "python"
+module-name = "rawkward._rawkward"
+features = ["python"]
