@@ -1,18 +1,68 @@
 // Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
+#![allow(dead_code)]
+
 #![cfg(feature = "python")]
 
 use std::sync::Arc;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyList};
+use pyo3::types::{PyAny, PyDict, PyList};
 
 use crate::content::{Content, NumpyArray};
-use crate::kernels::{slice, Slice};
-use crate::python::convert::from_python_nested_list;
-use crate::python::convert::content_to_python;
+use crate::kernels::{slice, slice_range, Slice, SliceError};
+use crate::python::convert::{content_to_python, content_to_pyobject, from_python_nested_list, from_python_object};
 
+// ── helpers (module-level, not exposed to Python) ────────────────────────────
+
+fn content_ndim(c: &Content) -> usize {
+    match c {
+        Content::NumpyArray(_) => 1,
+        Content::ListOffsetArray(a) => 1 + content_ndim(&a.content),
+        Content::RecordArray(_) => 1,
+        _ => 1,
+    }
+}
+
+fn content_nbytes(c: &Content) -> usize {
+    match c {
+        Content::NumpyArray(a) => a.data.len() * std::mem::size_of::<f64>(),
+        Content::ListOffsetArray(a) => {
+            a.offsets.len() * std::mem::size_of::<i64>() + content_nbytes(&a.content)
+        }
+        Content::RecordArray(r) => r.contents.iter().map(|c| content_nbytes(c)).sum(),
+        _ => 0,
+    }
+}
+
+fn fmt_content(c: &Content) -> String {
+    match c {
+        Content::NumpyArray(a) => {
+            let items: Vec<String> = a.data.iter().map(|x| format!("{x}")).collect();
+            format!("[{}]", items.join(", "))
+        }
+        Content::ListOffsetArray(a) => {
+            let items: Vec<String> = (0..a.len())
+                .map(|i| a.slice(i).map(|c| fmt_content(&c)).unwrap_or("?".into()))
+                .collect();
+            format!("[{}]", items.join(", "))
+        }
+        Content::RecordArray(r) => {
+            if r.fields.is_empty() {
+                format!("(len={})", r.length)
+            } else {
+                let pairs: Vec<String> = r.fields.iter().zip(r.contents.iter())
+                    .map(|(f, c)| format!("{f}: {}", fmt_content(c)))
+                    .collect();
+                format!("{{{}}}", pairs.join(", "))
+            }
+        }
+        _ => "...".into(),
+    }
+}
+
+// ── PyArray ───────────────────────────────────────────────────────────────────
 
 #[pyclass(name = "Array", module = "rawkward")]
 pub struct PyArray {
@@ -21,46 +71,88 @@ pub struct PyArray {
 
 #[pymethods]
 impl PyArray {
+    // ── constructor ──────────────────────────────────────────────────────────
     #[new]
     fn new(obj: &Bound<'_, PyAny>) -> PyResult<Self> {
-        if obj.is_instance_of::<PyList>() {
-            let first = obj.get_item(0)?;
-            if first.is_instance_of::<PyList>() {
-                let content = from_python_nested_list(obj)?;
-                return Ok(PyArray { inner: Arc::new(content) });
-            }
-        }
-
-        let seq = obj.extract::<Vec<f64>>()?;
-        let len = seq.len();
-        let data = Arc::from(seq.into_boxed_slice());
-        Ok(PyArray {
-            inner: Arc::new(Content::NumpyArray(NumpyArray {
-                data,
-                shape: vec![len],
-                strides: vec![1],
-            })),
-        })
+        let content = crate::python::convert::from_python_object(obj)?;
+        Ok(PyArray { inner: Arc::new(content) })
     }
-    
+
+    // ── layout (low-level view) ──────────────────────────────────────────────
+
     #[getter]
     pub fn layout(&self, py: Python) -> PyResult<PyObject> {
         content_to_python(py, &self.inner)
     }
-    
+
+    // ── shape / structure properties ─────────────────────────────────────────
+
+    #[getter]
+    fn ndim(&self) -> usize {
+        content_ndim(&self.inner)
+    }
+
+    #[getter]
+    fn nbytes(&self) -> usize {
+        content_nbytes(&self.inner)
+    }
+
+    #[getter]
+    fn fields(&self) -> Vec<String> {
+        match self.inner.as_ref() {
+            Content::RecordArray(r) => r.fields.clone(),
+            _ => vec![],
+        }
+    }
+
+    #[getter]
+    fn is_tuple(&self) -> bool {
+        match self.inner.as_ref() {
+            Content::RecordArray(r) => r.fields.is_empty(),
+            _ => false,
+        }
+    }
+
+    // ── conversion ───────────────────────────────────────────────────────────
+
+    fn tolist(&self, py: Python<'_>) -> PyResult<PyObject> {
+        content_to_pyobject(&self.inner, py)
+    }
+
+    fn to_list(&self, py: Python<'_>) -> PyResult<PyObject> {
+        self.tolist(py)
+    }
+
+    // ── sequence protocol ────────────────────────────────────────────────────
+
     fn __len__(&self) -> usize {
         self.inner.len()
     }
 
+    fn __iter__(slf: PyRef<'_, Self>, py: Python<'_>) -> PyResult<PyObject> {
+        let len = slf.inner.len();
+        let items: Vec<PyObject> = (0..len)
+            .map(|i| {
+                let s = Slice::Index(i as i64);
+                let out = slice(&slf.inner, &s)
+                    .map_err(|e: SliceError| pyo3::exceptions::PyIndexError::new_err(e.to_string()))?;
+                let arr = PyArray { inner: Arc::new(out) };
+                Py::new(py, arr).map(|p| p.into_bound(py).into_any().unbind())
+            })
+            .collect::<PyResult<_>>()?;
+        Ok(PyList::new(py, items)?.into_pyobject(py)?.into_any().unbind())
+    }
+
     fn __getitem__(&self, idx: &Bound<'_, PyAny>) -> PyResult<PyArray> {
-        // Case 1: integer index
+        // integer index
         if let Ok(i) = idx.extract::<isize>() {
             let s = Slice::Index(i as i64);
             let out = slice(&self.inner, &s)
-                .map_err(|e: crate::kernels::SliceError| pyo3::exceptions::PyIndexError::new_err(e.to_string()))?; //.map_err(|e| pyo3::exceptions::PyIndexError::new_err(e.to_string()))?;
+                .map_err(|e: SliceError| pyo3::exceptions::PyIndexError::new_err(e.to_string()))?;
             return Ok(PyArray { inner: Arc::new(out) });
         }
-        // Case 2: Python slice object
+
+        // slice object
         if let Ok(py_slice) = idx.downcast::<pyo3::types::PySlice>() {
             let indices = py_slice.indices((self.inner.len() as i64).try_into().unwrap())?;
             let start = indices.start as usize;
@@ -70,30 +162,91 @@ impl PyArray {
                 return Err(pyo3::exceptions::PyValueError::new_err("slice step must be 1"));
             }
 
-            // Delegate to a range slice on the content directly
-            let out = crate::kernels::slice_range(&self.inner, start, stop)
-                .map_err(|e: crate::kernels::SliceError| pyo3::exceptions::PyIndexError::new_err(e.to_string()))?; // .map_err(|e| pyo3::exceptions::PyIndexError::new_err(e.to_string()))?;
+            let out = slice_range(&self.inner, start, stop)
+                .map_err(|e: SliceError| pyo3::exceptions::PyIndexError::new_err(e.to_string()))?;
             return Ok(PyArray { inner: Arc::new(out) });
         }
 
+        // string → field access
+        if let Ok(field) = idx.extract::<String>() {
+            return self.get_field_by_name(&field);
+        }
+
         Err(pyo3::exceptions::PyTypeError::new_err(
-            "index must be int or slice",
+            "index must be int, slice, or str",
         ))
     }
 
-    fn __repr__(&self) -> PyResult<String> {
-        fn fmt(c: &Content) -> String {
-            match c {
-                Content::NumpyArray(a) => format!("Array({:?})", &*a.data),
-                Content::ListOffsetArray(a) => {
-                    let items: Vec<String> = (0..a.len())
-                        .map(|i| a.slice(i).map(|c| fmt(&c)).unwrap_or("?".into()))
-                        .collect();
-                    format!("Array([{}])", items.join(", "))
-                }
-                _ => format!("Array(...)"),
-            }
+    // ── attribute access (dot notation for record fields) ────────────────────
+
+    fn __getattr__(&self, name: &str) -> PyResult<PyArray> {
+        self.get_field_by_name(name)
+    }
+
+    fn __dir__(&self, py: Python<'_>) -> PyResult<PyObject> {
+        let mut names: Vec<String> = vec![
+            "__len__".into(), "__iter__".into(), "__getitem__".into(),
+            "__repr__".into(), "__str__".into(),
+            "tolist".into(), "to_list".into(), "to_numpy".into(),
+            "show".into(),
+            "layout".into(), "ndim".into(), "nbytes".into(),
+            "fields".into(), "is_tuple".into(),
+        ];
+        if let Content::RecordArray(r) = self.inner.as_ref() {
+            names.extend(r.fields.clone());
         }
-        Ok(fmt(&self.inner))
+        Ok(PyList::new(py, names)?.into_pyobject(py)?.into_any().unbind())
+    }
+
+    // ── display ──────────────────────────────────────────────────────────────
+
+    fn __repr__(&self) -> PyResult<String> {
+        Ok(format!("Array({})", fmt_content(&self.inner)))
+    }
+
+    fn __str__(&self) -> PyResult<String> {
+        Ok(fmt_content(&self.inner))
+    }
+
+    fn show(&self) -> PyResult<()> {
+        println!("{}", fmt_content(&self.inner));
+        Ok(())
+    }
+
+    // ── numpy interop ─────────────────────────────────────────────────────────
+
+    fn to_numpy(&self, py: Python<'_>) -> PyResult<PyObject> {
+        match self.inner.as_ref() {
+            Content::NumpyArray(a) => {
+                let numpy = py.import("numpy")?;
+                let list: Vec<f64> = a.data.to_vec();
+                numpy.call_method1("array", (list,))
+                    .map(|a| a.into_pyobject(py).unwrap().into_any().unbind())
+            }
+            _ => Err(pyo3::exceptions::PyValueError::new_err(
+                "cannot convert non-flat array to numpy without allowing missing",
+            )),
+        }
+    }
+}
+
+// ── private helpers ───────────────────────────────────────────────────────────
+
+impl PyArray {
+    fn get_field_by_name(&self, name: &str) -> PyResult<PyArray> {
+        match self.inner.as_ref() {
+            Content::RecordArray(r) => {
+                if let Some(i) = r.fields.iter().position(|f| f == name) {
+                    Ok(PyArray { inner: r.contents[i].clone() })
+                } else {
+                    Err(pyo3::exceptions::PyAttributeError::new_err(
+                        format!("no field '{name}'"),
+                    ))
+                }
+            }
+            _ => Err(pyo3::exceptions::PyAttributeError::new_err(
+                format!("no attribute '{name}'"),
+            )),
+        }
     }
 }

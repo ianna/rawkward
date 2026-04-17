@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 use std::sync::Arc;
-use crate::content::{Content, NumpyArray};
+use crate::content::{Content, NumpyArray, ListOffsetArray, RecordArray};
 
 #[derive(Debug)]
 pub enum Slice {

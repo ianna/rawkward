@@ -25,7 +25,6 @@ impl ListOffsetArray {
         let stop = self.offsets[idx + 1] as usize;
 
         match self.content.as_ref() {
-
             Content::NumpyArray(inner) => {
                 let data: Arc<[f64]> = Arc::from(&inner.data[start..stop]);
                 let len = data.len();
@@ -35,30 +34,67 @@ impl ListOffsetArray {
                     strides: vec![1],
                 }))
             }
+
             Content::ListOffsetArray(inner) => {
-                let mut new_offsets = vec![0i64];
-                let mut flat: Vec<Content> = Vec::new();
-
-                for i in start..stop {
-                    if let Some(item) = inner.slice(i) {
-                        new_offsets.push(new_offsets.last().unwrap() + 1);
-                        flat.push(item);
-                    }
-                }
-
-                let length = new_offsets.len() - 1;
-
+                // Return a new ListOffsetArray covering offsets[start..=stop]
+                let new_base = inner.offsets[start];
+                let new_offsets: Arc<[i64]> = Arc::from(
+                    inner.offsets[start..=stop]
+                        .iter()
+                        .map(|o| o - new_base)
+                        .collect::<Vec<_>>()
+                        .as_slice(),
+                );
                 Some(Content::ListOffsetArray(ListOffsetArray {
-                    offsets: Arc::from(new_offsets.into_boxed_slice()),
-                    content: Arc::new(Content::RecordArray(super::RecordArray {
-                        fields: vec![],
-                        contents: flat.into_iter().map(Arc::new).collect(),
-                        length,
-                    })),
+                    offsets: new_offsets,
+                    content: inner.content.clone(),
                 }))
             }
 
-            _ => unimplemented!("record slicing not implemented"),
+            Content::RecordArray(inner) => {
+                // Slice each field's content
+                let contents: Vec<Arc<Content>> = inner.contents.iter()
+                    .map(|c| {
+                        Arc::new(slice_content(c, start, stop))
+                    })
+                    .collect();
+                Some(Content::RecordArray(super::RecordArray {
+                    fields: inner.fields.clone(),
+                    contents,
+                    length: stop - start,
+                }))
+            }
+
+            _ => unimplemented!("slice not implemented for this layout"),
         }
+    }
+}
+
+fn slice_content(c: &Content, start: usize, stop: usize) -> Content {
+    match c {
+        Content::NumpyArray(a) => {
+            let data: Arc<[f64]> = Arc::from(&a.data[start..stop]);
+            let len = data.len();
+            Content::NumpyArray(NumpyArray {
+                data,
+                shape: vec![len],
+                strides: vec![1],
+            })
+        }
+        Content::ListOffsetArray(a) => {
+            let new_base = a.offsets[start];
+            let new_offsets: Arc<[i64]> = Arc::from(
+                a.offsets[start..=stop]
+                    .iter()
+                    .map(|o| o - new_base)
+                    .collect::<Vec<_>>()
+                    .as_slice(),
+            );
+            Content::ListOffsetArray(ListOffsetArray {
+                offsets: new_offsets,
+                content: a.content.clone(),
+            })
+        }
+        _ => unimplemented!("slice_content not implemented for this layout"),
     }
 }
