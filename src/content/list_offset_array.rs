@@ -50,7 +50,16 @@ impl ListOffsetArray {
                     content: inner.content.clone(),
                 }))
             }
-
+// Content::RecordArray(inner) => {
+//     let contents: Vec<Arc<Content>> = inner.contents.iter()
+//         .map(|col| Arc::new(slice_content(col, start, stop)))
+//         .collect();
+//     Some(Content::RecordArray(super::RecordArray {
+//         fields: inner.fields.clone(),
+//         contents,
+//         length: stop - start,
+//     }))
+// }
             Content::RecordArray(inner) => {
                 // Slice each field's content
                 let contents: Vec<Arc<Content>> = inner.contents.iter()
