@@ -18,7 +18,7 @@ pub mod hip;
 
 pub mod dispatch;
 
-pub use dispatch::{backend::Backend, best_backend};
+// pub use dispatch::{backend::Backend, best_backend};
 
 pub mod slice;
 pub use slice::{slice, slice_range, Slice, SliceError};
