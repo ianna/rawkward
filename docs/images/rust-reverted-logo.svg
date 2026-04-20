@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">
+  <g transform="translate(500, 0) scale(-1, 1)">
+    <image href="https://www.rust-lang.org/static/images/rust-logo-blk.svg" width="500" height="500" />
+  </g>
+</svg>
