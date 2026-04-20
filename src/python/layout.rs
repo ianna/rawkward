@@ -35,9 +35,17 @@ pub struct PyNumpyArray {
 #[pymethods]
 impl PyNumpyArray {
     fn __repr__(&self) -> String {
-        let vals: Vec<String> = self.data.iter().map(|v| {
-            if v.fract() == 0.0 { format!("{v:.1}") } else { format!("{v}") }
-        }).collect();
+        let vals: Vec<String> = self
+            .data
+            .iter()
+            .map(|v| {
+                if v.fract() == 0.0 {
+                    format!("{v:.1}")
+                } else {
+                    format!("{v}")
+                }
+            })
+            .collect();
         format!(
             "<NumpyArray dtype='float64' len='{}'>[{}]</NumpyArray>",
             self.data.len(),
@@ -59,7 +67,7 @@ impl PyNumpyArray {
 #[pyclass(name = "RecordArray", module = "rawkward")]
 pub struct PyRecordArray {
     pub fields: Vec<String>,
-    pub contents: Vec<PyObject>,  // one per field
+    pub contents: Vec<PyObject>, // one per field
     pub length: usize,
 }
 
@@ -76,7 +84,8 @@ impl PyRecordArray {
     }
 
     fn content(&self, py: Python, index: usize) -> PyResult<PyObject> {
-        self.contents.get(index)
+        self.contents
+            .get(index)
             .map(|o| o.clone_ref(py))
             .ok_or_else(|| pyo3::exceptions::PyIndexError::new_err("index out of range"))
     }
@@ -135,9 +144,16 @@ impl PyListOffsetArray {
         s.push_str("    <content>");
         let content_repr = self.content.bind(py).repr()?.extract::<String>()?;
         // indent all lines of nested content
-        let indented: Vec<String> = content_repr.lines()
+        let indented: Vec<String> = content_repr
+            .lines()
             .enumerate()
-            .map(|(i, line)| if i == 0 { line.to_string() } else { format!("        {line}") })
+            .map(|(i, line)| {
+                if i == 0 {
+                    line.to_string()
+                } else {
+                    format!("        {line}")
+                }
+            })
             .collect();
         s.push_str(&indented.join("\n"));
         s.push_str("</content>\n");
@@ -159,13 +175,19 @@ pub struct PyRegularArray {
 #[pymethods]
 impl PyRegularArray {
     #[getter]
-    fn size(&self) -> usize { self.size }
+    fn size(&self) -> usize {
+        self.size
+    }
 
     #[getter]
-    fn length(&self) -> usize { self.length }
+    fn length(&self) -> usize {
+        self.length
+    }
 
     #[getter]
-    fn content(&self, py: Python) -> PyObject { self.content.clone_ref(py) }
+    fn content(&self, py: Python) -> PyObject {
+        self.content.clone_ref(py)
+    }
 
     fn __repr__(&self, py: Python) -> PyResult<String> {
         let mut s = format!(
@@ -174,9 +196,16 @@ impl PyRegularArray {
         );
         s.push_str("    <content>");
         let content_repr = self.content.bind(py).repr()?.extract::<String>()?;
-        let indented: Vec<String> = content_repr.lines()
+        let indented: Vec<String> = content_repr
+            .lines()
             .enumerate()
-            .map(|(i, line)| if i == 0 { line.to_string() } else { format!("        {line}") })
+            .map(|(i, line)| {
+                if i == 0 {
+                    line.to_string()
+                } else {
+                    format!("        {line}")
+                }
+            })
             .collect();
         s.push_str(&indented.join("\n"));
         s.push_str("</content>\n");
@@ -196,10 +225,14 @@ pub struct PyIndexedOptionArray {
 #[pymethods]
 impl PyIndexedOptionArray {
     #[getter]
-    fn index(&self) -> PyIndex { self.index.clone() }
+    fn index(&self) -> PyIndex {
+        self.index.clone()
+    }
 
     #[getter]
-    fn content(&self, py: Python) -> PyObject { self.content.clone_ref(py) }
+    fn content(&self, py: Python) -> PyObject {
+        self.content.clone_ref(py)
+    }
 
     fn __repr__(&self, py: Python) -> PyResult<String> {
         let len = self.index.data.len();
@@ -211,9 +244,16 @@ impl PyIndexedOptionArray {
 
         s.push_str("    <content>");
         let content_repr = self.content.bind(py).repr()?.extract::<String>()?;
-        let indented: Vec<String> = content_repr.lines()
+        let indented: Vec<String> = content_repr
+            .lines()
             .enumerate()
-            .map(|(i, line)| if i == 0 { line.to_string() } else { format!("        {line}") })
+            .map(|(i, line)| {
+                if i == 0 {
+                    line.to_string()
+                } else {
+                    format!("        {line}")
+                }
+            })
             .collect();
         s.push_str(&indented.join("\n"));
         s.push_str("</content>\n");

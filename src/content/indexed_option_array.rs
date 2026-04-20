@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
-use std::sync::Arc;
 use crate::content::Content;
+use std::sync::Arc;
 
 /// IndexedOptionArray represents optional (nullable) data.
 ///
@@ -35,9 +35,12 @@ impl IndexedOptionArray {
         // content must already be assembled; index points into it
         // For simple cases, build a flat index
         let index: Arc<[i64]> = Arc::from(
-            values.iter().enumerate().map(|(i, v)| {
-                if v.is_some() { i as i64 } else { -1 }
-            }).collect::<Vec<_>>().as_slice()
+            values
+                .iter()
+                .enumerate()
+                .map(|(i, v)| if v.is_some() { i as i64 } else { -1 })
+                .collect::<Vec<_>>()
+                .as_slice(),
         );
         IndexedOptionArray { index, content }
     }
@@ -110,7 +113,9 @@ impl IndexedOptionArray {
         use crate::content::regular_array::slice_content;
 
         // Gather valid indices in order
-        let valid_indices: Vec<usize> = self.index.iter()
+        let valid_indices: Vec<usize> = self
+            .index
+            .iter()
             .filter(|&&i| i >= 0)
             .map(|&i| i as usize)
             .collect();
@@ -129,7 +134,8 @@ impl IndexedOptionArray {
             _ => {
                 // General case: gather slices
                 // This materializes, which is fine for a CPU-only engine
-                let slices: Vec<Content> = valid_indices.iter()
+                let slices: Vec<Content> = valid_indices
+                    .iter()
                     .map(|&i| slice_content(&self.content, i, i + 1))
                     .collect();
                 crate::content::merge_contents_same_type(slices)

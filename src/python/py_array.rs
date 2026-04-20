@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #![allow(dead_code)]
-
 #![cfg(feature = "python")]
 
 use std::sync::Arc;
@@ -10,10 +9,12 @@ use std::sync::Arc;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyList};
 
-use crate::content::{Content, NumpyArray};
-use crate::kernels::{slice, slice_range, Slice, SliceError};
-use crate::python::convert::{content_to_python, content_to_pyobject, from_python_nested_list, from_python_object};
 use crate::content::indexed_option_array::OptionValue;
+use crate::content::{Content, NumpyArray};
+use crate::kernels::{Slice, SliceError, slice, slice_range};
+use crate::python::convert::{
+    content_to_pyobject, content_to_python, from_python_nested_list, from_python_object,
+};
 
 // ── helpers (module-level, not exposed to Python) ────────────────────────────
 
@@ -22,7 +23,7 @@ fn content_ndim(c: &Content) -> usize {
         Content::NumpyArray(_) => 1,
         Content::ListOffsetArray(a) => 1 + content_ndim(&a.content),
         Content::RegularArray(a) => 1 + content_ndim(&a.content),
-        Content::RecordArray(_) => 1,  // records don't add a dimension
+        Content::RecordArray(_) => 1, // records don't add a dimension
         Content::IndexedOptionArray(a) => content_ndim(&a.content),
         _ => 1,
     }
@@ -88,7 +89,10 @@ fn fmt_content(c: &Content) -> String {
             // Iterate row by row
             let rows: Vec<String> = (0..r.length)
                 .map(|row| {
-                    let pairs: Vec<String> = r.fields.iter().zip(r.contents.iter())
+                    let pairs: Vec<String> = r
+                        .fields
+                        .iter()
+                        .zip(r.contents.iter())
                         .map(|(f, col)| {
                             let val = fmt_scalar(col, row);
                             format!("{f}: {val}")
@@ -99,10 +103,14 @@ fn fmt_content(c: &Content) -> String {
                 .collect();
             format!("[{}]", rows.join(", "))
         }
-        
+
         Content::RegularArray(a) => {
             let items: Vec<String> = (0..a.len())
-                .map(|i| a.slice_at(i as i64).map(|c| fmt_preview(&c, 20)).unwrap_or("?".into()))
+                .map(|i| {
+                    a.slice_at(i as i64)
+                        .map(|c| fmt_preview(&c, 20))
+                        .unwrap_or("?".into())
+                })
                 .collect();
             format!("[{}]", items.join(", "))
         }
@@ -142,7 +150,10 @@ fn content_type_str(c: &Content) -> String {
         Content::NumpyArray(_) => "float64".into(),
         Content::ListOffsetArray(a) => format!("var * {}", content_type_str(&a.content)),
         Content::RecordArray(r) => {
-            let fields: Vec<String> = r.fields.iter().zip(r.contents.iter())
+            let fields: Vec<String> = r
+                .fields
+                .iter()
+                .zip(r.contents.iter())
                 .map(|(f, c)| format!("{f}: {}", content_type_str(c)))
                 .collect();
             format!("{{{}}}", fields.join(", "))
@@ -165,14 +176,23 @@ fn fmt_preview(c: &Content, limit: usize) -> String {
             let n = a.len();
             let show = n.min(limit);
             let mut parts: Vec<String> = (0..show)
-                .map(|i| a.slice(i).map(|c| fmt_preview(&c, limit)).unwrap_or("?".into()))
+                .map(|i| {
+                    a.slice(i)
+                        .map(|c| fmt_preview(&c, limit))
+                        .unwrap_or("?".into())
+                })
                 .collect();
-            if n > show { parts.push("...".into()); }
+            if n > show {
+                parts.push("...".into());
+            }
             format!("[{}]", parts.join(", "))
         }
         Content::RecordArray(r) => {
             // single record display — used when we've already sliced to one row
-            let pairs: Vec<String> = r.fields.iter().zip(r.contents.iter())
+            let pairs: Vec<String> = r
+                .fields
+                .iter()
+                .zip(r.contents.iter())
                 .map(|(f, col)| format!("{f}: {}", fmt_scalar(col, 0)))
                 .collect();
             format!("{{{}}}", pairs.join(", "))
@@ -196,15 +216,24 @@ fn fmt_preview(c: &Content, limit: usize) -> String {
 fn fmt_scalar(col: &Content, row: usize) -> String {
     match col {
         Content::NumpyArray(a) => {
-            if row < a.data.len() { format!("{}", a.data[row]) } else { "?".into() }
+            if row < a.data.len() {
+                format!("{}", a.data[row])
+            } else {
+                "?".into()
+            }
         }
         Content::ListOffsetArray(a) => {
             // slice gives the sub-list at this row
-            a.slice(row).map(|c| fmt_preview(&c, 20)).unwrap_or("?".into())
+            a.slice(row)
+                .map(|c| fmt_preview(&c, 20))
+                .unwrap_or("?".into())
         }
         Content::RecordArray(r) => {
             // single row of a nested record
-            let pairs: Vec<String> = r.fields.iter().zip(r.contents.iter())
+            let pairs: Vec<String> = r
+                .fields
+                .iter()
+                .zip(r.contents.iter())
                 .map(|(f, col)| format!("{f}: {}", fmt_scalar(col, row)))
                 .collect();
             format!("{{{}}}", pairs.join(", "))
@@ -226,7 +255,9 @@ impl PyArray {
     #[new]
     fn new(obj: &Bound<'_, PyAny>) -> PyResult<Self> {
         let content = crate::python::convert::from_python_object(obj)?;
-        Ok(PyArray { inner: Arc::new(content) })
+        Ok(PyArray {
+            inner: Arc::new(content),
+        })
     }
 
     // ── layout (low-level view) ──────────────────────────────────────────────
@@ -285,9 +316,12 @@ impl PyArray {
         let items: Vec<PyObject> = (0..len)
             .map(|i| {
                 let s = Slice::Index(i as i64);
-                let out = slice(&slf.inner, &s)
-                    .map_err(|e: SliceError| pyo3::exceptions::PyIndexError::new_err(e.to_string()))?;
-                let arr = PyArray { inner: Arc::new(out) };
+                let out = slice(&slf.inner, &s).map_err(|e: SliceError| {
+                    pyo3::exceptions::PyIndexError::new_err(e.to_string())
+                })?;
+                let arr = PyArray {
+                    inner: Arc::new(out),
+                };
                 Py::new(py, arr).map(|p| p.into_bound(py).into_any().unbind())
             })
             .collect::<PyResult<_>>()?;
@@ -316,7 +350,9 @@ impl PyArray {
             let s = Slice::Index(i as i64);
             let out = slice(&self.inner, &s)
                 .map_err(|e: SliceError| pyo3::exceptions::PyIndexError::new_err(e.to_string()))?;
-            return Ok(PyArray { inner: Arc::new(out) });
+            return Ok(PyArray {
+                inner: Arc::new(out),
+            });
         }
 
         // slice object
@@ -326,12 +362,16 @@ impl PyArray {
             let stop = indices.stop as usize;
 
             if indices.step != 1 {
-                return Err(pyo3::exceptions::PyValueError::new_err("slice step must be 1"));
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    "slice step must be 1",
+                ));
             }
 
             let out = slice_range(&self.inner, start, stop)
                 .map_err(|e: SliceError| pyo3::exceptions::PyIndexError::new_err(e.to_string()))?;
-            return Ok(PyArray { inner: Arc::new(out) });
+            return Ok(PyArray {
+                inner: Arc::new(out),
+            });
         }
 
         // string → field access
@@ -352,17 +392,28 @@ impl PyArray {
 
     fn __dir__(&self, py: Python<'_>) -> PyResult<PyObject> {
         let mut names: Vec<String> = vec![
-            "__len__".into(), "__iter__".into(), "__getitem__".into(),
-            "__repr__".into(), "__str__".into(),
-            "tolist".into(), "to_list".into(), "to_numpy".into(),
+            "__len__".into(),
+            "__iter__".into(),
+            "__getitem__".into(),
+            "__repr__".into(),
+            "__str__".into(),
+            "tolist".into(),
+            "to_list".into(),
+            "to_numpy".into(),
             "show".into(),
-            "layout".into(), "ndim".into(), "nbytes".into(),
-            "fields".into(), "is_tuple".into(),
+            "layout".into(),
+            "ndim".into(),
+            "nbytes".into(),
+            "fields".into(),
+            "is_tuple".into(),
         ];
         if let Content::RecordArray(r) = self.inner.as_ref() {
             names.extend(r.fields.clone());
         }
-        Ok(PyList::new(py, names)?.into_pyobject(py)?.into_any().unbind())
+        Ok(PyList::new(py, names)?
+            .into_pyobject(py)?
+            .into_any()
+            .unbind())
     }
 
     // ── display ──────────────────────────────────────────────────────────────
@@ -375,7 +426,6 @@ impl PyArray {
         let preview = fmt_preview(&self.inner, 2);
         Ok(format!("<Array {preview} type='{type_str}'>"))
     }
-
 
     // fn __str__(&self) -> PyResult<String> {
     //     Ok(fmt_content(&self.inner))
@@ -401,7 +451,8 @@ impl PyArray {
             Content::NumpyArray(a) => {
                 let numpy = py.import("numpy")?;
                 let list: Vec<f64> = a.data.to_vec();
-                numpy.call_method1("array", (list,))
+                numpy
+                    .call_method1("array", (list,))
                     .map(|a| a.into_pyobject(py).unwrap().into_any().unbind())
             }
             _ => Err(pyo3::exceptions::PyValueError::new_err(
@@ -418,16 +469,18 @@ impl PyArray {
         match self.inner.as_ref() {
             Content::RecordArray(r) => {
                 if let Some(i) = r.fields.iter().position(|f| f == name) {
-                    Ok(PyArray { inner: r.contents[i].clone() })
+                    Ok(PyArray {
+                        inner: r.contents[i].clone(),
+                    })
                 } else {
-                    Err(pyo3::exceptions::PyAttributeError::new_err(
-                        format!("no field '{name}'"),
-                    ))
+                    Err(pyo3::exceptions::PyAttributeError::new_err(format!(
+                        "no field '{name}'"
+                    )))
                 }
             }
-            _ => Err(pyo3::exceptions::PyAttributeError::new_err(
-                format!("no attribute '{name}'"),
-            )),
+            _ => Err(pyo3::exceptions::PyAttributeError::new_err(format!(
+                "no attribute '{name}'"
+            ))),
         }
     }
 }

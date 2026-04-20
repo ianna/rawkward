@@ -1,14 +1,14 @@
 // Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
-#[cfg(feature = "python")]
-use pyo3::prelude::*;
+use crate::python::layout::PyIndex;
+use crate::python::layout::PyIndexedOptionArray;
 use crate::python::layout::PyListOffsetArray;
 use crate::python::layout::PyNumpyArray;
-use crate::python::layout::PyIndex;
 use crate::python::layout::PyRecordArray;
 use crate::python::layout::PyRegularArray;
-use crate::python::layout::PyIndexedOptionArray;
+#[cfg(feature = "python")]
+use pyo3::prelude::*;
 
 mod content;
 mod kernels;

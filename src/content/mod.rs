@@ -3,19 +3,19 @@
 
 #![allow(dead_code)]
 
-pub mod numpy_array;
+pub mod indexed_option_array;
 pub mod list_offset_array;
+pub mod numpy_array;
 pub mod record_array;
 pub mod regular_array;
-pub mod indexed_option_array;
 
 use std::sync::Arc;
 
-pub use numpy_array::NumpyArray;
+pub use indexed_option_array::IndexedOptionArray;
 pub use list_offset_array::ListOffsetArray;
+pub use numpy_array::NumpyArray;
 pub use record_array::RecordArray;
 pub use regular_array::RegularArray;
-pub use indexed_option_array::IndexedOptionArray;
 
 /// The core recursive content enum.
 /// Every variant is heap-allocated and ref-counted via Arc for zero-copy slicing.
@@ -115,7 +115,9 @@ impl Content {
 
 pub trait ArrayLike {
     fn len(&self) -> usize;
-    fn is_empty(&self) -> bool { self.len() == 0 }
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 pub trait SequentialArray: ArrayLike {
@@ -129,22 +131,34 @@ pub trait MappingArray: ArrayLike {
 }
 
 impl ArrayLike for ListOffsetArray {
-    fn len(&self) -> usize { self.offsets.len().saturating_sub(1) }
+    fn len(&self) -> usize {
+        self.offsets.len().saturating_sub(1)
+    }
 }
 
 impl ArrayLike for RecordArray {
-    fn len(&self) -> usize { self.length }
+    fn len(&self) -> usize {
+        self.length
+    }
 }
 
 impl SequentialArray for ListOffsetArray {
-    fn offsets(&self) -> &[i64] { &self.offsets }
-    fn content(&self) -> &Content { &self.content }
+    fn offsets(&self) -> &[i64] {
+        &self.offsets
+    }
+    fn content(&self) -> &Content {
+        &self.content
+    }
 }
 
 impl MappingArray for RecordArray {
-    fn fields(&self) -> &[String] { &self.fields }
+    fn fields(&self) -> &[String] {
+        &self.fields
+    }
     fn field(&self, name: &str) -> Option<&Content> {
-        self.fields.iter().position(|f| f == name)
+        self.fields
+            .iter()
+            .position(|f| f == name)
             .map(|i| &*self.contents[i])
     }
 }
@@ -164,10 +178,13 @@ pub fn merge_contents_same_type(mut children: Vec<Content>) -> Option<Content> {
 
     // All NumpyArray
     if children.iter().all(|c| matches!(c, Content::NumpyArray(_))) {
-        let flat: Vec<f64> = children.iter().flat_map(|c| match c {
-            Content::NumpyArray(a) => a.data.iter().copied().collect::<Vec<_>>(),
-            _ => unreachable!(),
-        }).collect();
+        let flat: Vec<f64> = children
+            .iter()
+            .flat_map(|c| match c {
+                Content::NumpyArray(a) => a.data.iter().copied().collect::<Vec<_>>(),
+                _ => unreachable!(),
+            })
+            .collect();
         let len = flat.len();
         return Some(Content::NumpyArray(NumpyArray {
             data: Arc::from(flat.into_boxed_slice()),
@@ -177,7 +194,10 @@ pub fn merge_contents_same_type(mut children: Vec<Content>) -> Option<Content> {
     }
 
     // All RecordArray — merge column-wise
-    if children.iter().all(|c| matches!(c, Content::RecordArray(_))) {
+    if children
+        .iter()
+        .all(|c| matches!(c, Content::RecordArray(_)))
+    {
         let fields = match &children[0] {
             Content::RecordArray(r) => r.fields.clone(),
             _ => unreachable!(),
@@ -191,14 +211,22 @@ pub fn merge_contents_same_type(mut children: Vec<Content>) -> Option<Content> {
                 }
             }
         }
-        let contents = per_field.into_iter()
+        let contents = per_field
+            .into_iter()
             .map(|items| Arc::new(merge_contents_same_type(items).unwrap()))
             .collect();
-        return Some(Content::RecordArray(RecordArray { fields, contents, length: n }));
+        return Some(Content::RecordArray(RecordArray {
+            fields,
+            contents,
+            length: n,
+        }));
     }
 
     // All ListOffsetArray — merge into single flat ListOffsetArray
-    if children.iter().all(|c| matches!(c, Content::ListOffsetArray(_))) {
+    if children
+        .iter()
+        .all(|c| matches!(c, Content::ListOffsetArray(_)))
+    {
         let mut merged_offsets: Vec<i64> = vec![0];
         let mut flat_values: Vec<f64> = Vec::new();
         for child in children.drain(..) {

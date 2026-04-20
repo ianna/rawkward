@@ -12,13 +12,13 @@
 //! A dispatcher module may select the best backend at runtime.
 
 pub mod cpu;
-pub mod simd;
 pub mod cuda;
 pub mod hip;
+pub mod simd;
 
 pub mod dispatch;
 
 // pub use dispatch::{backend::Backend, best_backend};
 
 pub mod slice;
-pub use slice::{slice, slice_range, Slice, SliceError};
+pub use slice::{Slice, SliceError, slice, slice_range};
