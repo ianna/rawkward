@@ -1,9 +1,9 @@
 // Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
-use std::sync::Arc;
-use crate::content::{Content, NumpyArray, ListOffsetArray, RegularArray, IndexedOptionArray};
 use crate::content::regular_array::slice_content;
+use crate::content::{Content, IndexedOptionArray, ListOffsetArray, NumpyArray, RegularArray};
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub enum Slice {
@@ -41,7 +41,9 @@ pub fn slice(content: &Content, s: &Slice) -> Result<Content, SliceError> {
 
         (Content::RecordArray(r), Slice::Index(i)) => {
             let idx = normalize_index(*i, r.length)?;
-            let contents: Vec<Arc<Content>> = r.contents.iter()
+            let contents: Vec<Arc<Content>> = r
+                .contents
+                .iter()
                 .map(|col| Arc::new(slice_content(col, idx, idx + 1)))
                 .collect();
             Ok(Content::RecordArray(crate::content::RecordArray {

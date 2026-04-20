@@ -5,16 +5,17 @@
 
 use std::sync::Arc;
 
-use pyo3::prelude::*;
 use pyo3::PyObject;
+use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyList};
 
-use crate::content::{Content, ListOffsetArray, NumpyArray, IndexedOptionArray};
-use super::layout::{PyIndex, PyNumpyArray, PyListOffsetArray, PyRecordArray, PyRegularArray, PyIndexedOptionArray};
+use super::layout::{
+    PyIndex, PyIndexedOptionArray, PyListOffsetArray, PyNumpyArray, PyRecordArray, PyRegularArray,
+};
 use crate::content::indexed_option_array::OptionValue;
+use crate::content::{Content, IndexedOptionArray, ListOffsetArray, NumpyArray};
 
 pub fn from_python_object(obj: &Bound<'_, PyAny>) -> PyResult<Content> {
-
     // Case 1: scalar number → single-element NumpyArray
     if let Ok(val) = obj.extract::<f64>() {
         return Ok(Content::NumpyArray(NumpyArray {
@@ -51,14 +52,16 @@ pub fn from_python_object(obj: &Bound<'_, PyAny>) -> PyResult<Content> {
     }
 
     // Case 4: list → recurse
-    let outer = obj.downcast::<PyList>()
-        .map_err(|_| pyo3::exceptions::PyTypeError::new_err(
-            format!("expected a list or dict, got {}",
-                obj.get_type().name()
-                    .map(|s| s.to_string())
-                    .unwrap_or_else(|_| "unknown".into()))
-        ))?;
-//    let outer = obj.downcast::<PyList>()...;
+    let outer = obj.downcast::<PyList>().map_err(|_| {
+        pyo3::exceptions::PyTypeError::new_err(format!(
+            "expected a list or dict, got {}",
+            obj.get_type()
+                .name()
+                .map(|s| s.to_string())
+                .unwrap_or_else(|_| "unknown".into())
+        ))
+    })?;
+    //    let outer = obj.downcast::<PyList>()...;
     // Check if any item is Python None
     let has_none = outer.iter().any(|item| item.is_none());
 
@@ -97,7 +100,10 @@ pub fn from_python_object(obj: &Bound<'_, PyAny>) -> PyResult<Content> {
         children.push(from_python_object(&item)?);
     }
 
-    if children.iter().all(|c| matches!(c, Content::RecordArray(_))) {
+    if children
+        .iter()
+        .all(|c| matches!(c, Content::RecordArray(_)))
+    {
         return merge_contents(children);
     }
     // // If children are RecordArrays, merge columns and use row-based offsets
@@ -160,10 +166,13 @@ fn merge_contents(mut children: Vec<Content>) -> PyResult<Content> {
 
     // All NumpyArray → flatten into one contiguous buffer
     if children.iter().all(|c| matches!(c, Content::NumpyArray(_))) {
-        let flat: Vec<f64> = children.iter().flat_map(|c| match c {
-            Content::NumpyArray(a) => a.data.iter().copied().collect::<Vec<_>>(),
-            _ => unreachable!(),
-        }).collect();
+        let flat: Vec<f64> = children
+            .iter()
+            .flat_map(|c| match c {
+                Content::NumpyArray(a) => a.data.iter().copied().collect::<Vec<_>>(),
+                _ => unreachable!(),
+            })
+            .collect();
         let len = flat.len();
         return Ok(Content::NumpyArray(NumpyArray {
             data: Arc::from(flat.into_boxed_slice()),
@@ -173,7 +182,10 @@ fn merge_contents(mut children: Vec<Content>) -> PyResult<Content> {
     }
 
     // All RecordArray → merge column-wise
-    if children.iter().all(|c| matches!(c, Content::RecordArray(_))) {
+    if children
+        .iter()
+        .all(|c| matches!(c, Content::RecordArray(_)))
+    {
         let fields = match &children[0] {
             Content::RecordArray(r) => r.fields.clone(),
             _ => unreachable!(),
@@ -190,7 +202,8 @@ fn merge_contents(mut children: Vec<Content>) -> PyResult<Content> {
             }
         }
 
-        let contents = per_field.into_iter()
+        let contents = per_field
+            .into_iter()
             .map(|field_items| Ok(Arc::new(merge_contents(field_items)?)))
             .collect::<PyResult<Vec<_>>>()?;
 
@@ -266,7 +279,10 @@ fn merge_contents(mut children: Vec<Content>) -> PyResult<Content> {
     // }
 
     // All ListOffsetArray → merge offsets and recurse into content
-    if children.iter().all(|c| matches!(c, Content::ListOffsetArray(_))) {
+    if children
+        .iter()
+        .all(|c| matches!(c, Content::ListOffsetArray(_)))
+    {
         let mut merged_offsets: Vec<i64> = vec![0];
         let mut all_contents: Vec<Content> = Vec::new();
 
@@ -291,7 +307,9 @@ fn merge_contents(mut children: Vec<Content>) -> PyResult<Content> {
                     Content::RecordArray(r) => {
                         // split the record back into per-row RecordArrays
                         for row in 0..r.length {
-                            let row_contents: Vec<Arc<Content>> = r.contents.iter()
+                            let row_contents: Vec<Arc<Content>> = r
+                                .contents
+                                .iter()
                                 .map(|col| Arc::new(slice_col(col, row, row + 1)))
                                 .collect();
                             all_contents.push(Content::RecordArray(crate::content::RecordArray {
@@ -353,7 +371,9 @@ pub fn content_to_python(py: Python, c: &Content) -> PyResult<PyObject> {
         }
 
         Content::ListOffsetArray(a) => {
-            let offsets = PyIndex { data: a.offsets.to_vec() };
+            let offsets = PyIndex {
+                data: a.offsets.to_vec(),
+            };
             let content = content_to_python(py, &a.content)?;
             let obj = PyListOffsetArray { offsets, content };
             Py::new(py, obj).map(|p| p.into_bound(py).into_any().unbind())
@@ -372,9 +392,10 @@ pub fn content_to_python(py: Python, c: &Content) -> PyResult<PyObject> {
         //         .collect::<PyResult<_>>()?;
         //     Ok(PyList::new(py, rows)?.into_any().unbind())
         // }
-
         Content::RecordArray(r) => {
-            let contents: Vec<PyObject> = r.contents.iter()
+            let contents: Vec<PyObject> = r
+                .contents
+                .iter()
                 .map(|c| content_to_python(py, c))
                 .collect::<PyResult<_>>()?;
             let obj = PyRecordArray {
@@ -405,9 +426,10 @@ pub fn content_to_python(py: Python, c: &Content) -> PyResult<PyObject> {
         //         .collect::<PyResult<_>>()?;
         //     Ok(PyList::new(py, items)?.into_any().unbind())
         // }
-
         Content::IndexedOptionArray(a) => {
-            let index = PyIndex { data: a.index.to_vec() };
+            let index = PyIndex {
+                data: a.index.to_vec(),
+            };
             let content = content_to_python(py, &a.content)?;
             let obj = PyIndexedOptionArray { index, content };
             Py::new(py, obj).map(|p| p.into_bound(py).into_any().unbind())
@@ -423,22 +445,19 @@ pub fn content_to_python(py: Python, c: &Content) -> PyResult<PyObject> {
         //         .collect::<PyResult<_>>()?;
         //     Ok(PyList::new(py, items)?.into_any().unbind())
         // }
-
         _ => Err(pyo3::exceptions::PyNotImplementedError::new_err(
             "layout conversion not implemented",
         )),
-
     }
 }
 
 fn scalar_to_pyobject(col: &Content, row: usize, py: Python<'_>) -> PyResult<PyObject> {
     match col {
-        Content::NumpyArray(a) => {
-            Ok(a.data[row].into_pyobject(py)?.into_any().unbind())
-        }
+        Content::NumpyArray(a) => Ok(a.data[row].into_pyobject(py)?.into_any().unbind()),
         Content::ListOffsetArray(a) => {
-            let inner = a.slice(row).ok_or_else(||
-                pyo3::exceptions::PyIndexError::new_err("out of bounds"))?;
+            let inner = a
+                .slice(row)
+                .ok_or_else(|| pyo3::exceptions::PyIndexError::new_err("out of bounds"))?;
             content_to_pyobject(&inner, py)
         }
         Content::IndexedOptionArray(a) => {
@@ -497,12 +516,20 @@ fn slice_col(c: &Content, start: usize, stop: usize) -> Content {
         Content::NumpyArray(a) => {
             let data: Arc<[f64]> = Arc::from(&a.data[start..stop]);
             let len = data.len();
-            Content::NumpyArray(NumpyArray { data, shape: vec![len], strides: vec![1] })
+            Content::NumpyArray(NumpyArray {
+                data,
+                shape: vec![len],
+                strides: vec![1],
+            })
         }
         Content::ListOffsetArray(a) => {
             let new_base = a.offsets[start];
             let new_offsets: Arc<[i64]> = Arc::from(
-                a.offsets[start..=stop].iter().map(|o| o - new_base).collect::<Vec<_>>().as_slice()
+                a.offsets[start..=stop]
+                    .iter()
+                    .map(|o| o - new_base)
+                    .collect::<Vec<_>>()
+                    .as_slice(),
             );
             Content::ListOffsetArray(ListOffsetArray {
                 offsets: new_offsets,

@@ -20,4 +20,3 @@ pub fn simd_available() -> bool {
     // For now, assume SIMD is always available.
     true
 }
-

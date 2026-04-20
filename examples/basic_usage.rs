@@ -7,7 +7,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyAny;
 
 use crate::content::{Content, NumpyArray};
-use crate::kernels::{slice, Slice};
+use crate::kernels::{Slice, slice};
 
 #[pyclass]
 pub struct PyArray {

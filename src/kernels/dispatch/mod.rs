@@ -21,4 +21,3 @@ pub fn best_backend() -> Backend {
         Backend::Cpu
     }
 }
-

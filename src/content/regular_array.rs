@@ -1,9 +1,9 @@
 // Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
-use std::sync::Arc;
 use crate::content::Content;
 use crate::content::IndexedOptionArray;
+use std::sync::Arc;
 
 /// RegularArray describes lists that all have the same fixed length (`size`).
 /// The underlying `content` is a flat buffer; list i occupies content[i*size .. (i+1)*size].
@@ -25,7 +25,11 @@ impl RegularArray {
         } else {
             content.len() / size
         };
-        RegularArray { content, size, length }
+        RegularArray {
+            content,
+            size,
+            length,
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -79,7 +83,7 @@ impl RegularArray {
 
 /// Slice a Content from start..stop (used by both RegularArray and slicing kernels).
 pub(crate) fn slice_content(c: &Content, start: usize, stop: usize) -> Content {
-    use crate::content::{NumpyArray, ListOffsetArray, RecordArray};
+    use crate::content::{ListOffsetArray, NumpyArray, RecordArray};
     use std::sync::Arc;
 
     match c {
@@ -108,11 +112,11 @@ pub(crate) fn slice_content(c: &Content, start: usize, stop: usize) -> Content {
                 content: Arc::new(slice_content(&a.content, inner_start, inner_stop)),
             })
         }
-        Content::RegularArray(a) => {
-            Content::RegularArray(a.slice_range(start, stop))
-        }
+        Content::RegularArray(a) => Content::RegularArray(a.slice_range(start, stop)),
         Content::RecordArray(r) => {
-            let contents: Vec<Arc<Content>> = r.contents.iter()
+            let contents: Vec<Arc<Content>> = r
+                .contents
+                .iter()
                 .map(|col| Arc::new(slice_content(col, start, stop)))
                 .collect();
             Content::RecordArray(RecordArray {
@@ -122,12 +126,10 @@ pub(crate) fn slice_content(c: &Content, start: usize, stop: usize) -> Content {
             })
         }
 
-        Content::IndexedOptionArray(a) => {
-            Content::IndexedOptionArray(IndexedOptionArray {
-                index: Arc::from(&a.index[start..stop]),
-                content: a.content.clone(),
-            })
-        }
+        Content::IndexedOptionArray(a) => Content::IndexedOptionArray(IndexedOptionArray {
+            index: Arc::from(&a.index[start..stop]),
+            content: a.content.clone(),
+        }),
         _ => unimplemented!("slice_content not implemented for this layout"),
     }
 }
