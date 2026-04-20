@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">
+  <defs>
+    <filter id="white-out">
+      <feColorMatrix type="matrix" values="0 0 0 0 1 
+                                           0 0 0 0 1 
+                                           0 0 0 0 1 
+                                           0 0 0 1 0" />
+    </filter>
+  </defs>
+  
+  <g transform="translate(500, 0) scale(-1, 1)" filter="url(#white-out)">
+    <image href="https://www.rust-lang.org/static/images/rust-logo-blk.svg" width="500" height="500" />
+  </g>
+</svg>
