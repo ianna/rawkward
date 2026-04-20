@@ -1,12 +1,11 @@
 // Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
-use crate::python::layout::PyIndex;
-use crate::python::layout::PyIndexedOptionArray;
-use crate::python::layout::PyListOffsetArray;
-use crate::python::layout::PyNumpyArray;
-use crate::python::layout::PyRecordArray;
-use crate::python::layout::PyRegularArray;
+#[cfg(feature = "python")]
+use crate::python::layout::{
+    PyIndex, PyIndexedOptionArray, PyListOffsetArray, PyNumpyArray, PyRecordArray, PyRegularArray,
+};
+
 #[cfg(feature = "python")]
 use pyo3::prelude::*;
 
