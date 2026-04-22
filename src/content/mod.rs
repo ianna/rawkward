@@ -3,6 +3,9 @@
 
 #![allow(dead_code)]
 
+use crate::dtype::DType;
+use crate::layout::Layout;
+
 pub mod indexed_option_array;
 pub mod list_offset_array;
 pub mod numpy_array;
@@ -21,8 +24,10 @@ pub use regular_array::RegularArray;
 /// Every variant is heap-allocated and ref-counted via Arc for zero-copy slicing.
 #[derive(Clone, Debug)]
 pub enum Content {
-    /// 1-D or rectilinear numeric data (float64 for now).
-    NumpyArray(NumpyArray),
+    /// 1-D or rectilinear numeric data.
+    Bool(NumpyArray<bool>),
+    I64(NumpyArray<i64>),
+    F64(NumpyArray<f64>),
 
     /// Variable-length lists: offsets[i]..offsets[i+1] indexes into content.
     ListOffsetArray(ListOffsetArray),
@@ -36,11 +41,65 @@ pub enum Content {
     /// Optional (nullable) data: index[i] < 0 means None.
     IndexedOptionArray(IndexedOptionArray),
 
-    /// Reserved for future use
+    /// Reserved for future use.
     UnionArray(UnionArray),
 }
 
-// ── Inline stub types (not yet fully implemented) ────────────────────────────
+impl Layout for Content {
+    fn len(&self) -> usize {
+        match self {
+            Content::Bool(a) => a.len(),
+            Content::I64(a) => a.len(),
+            Content::F64(a) => a.len(),
+            Content::ListOffsetArray(a) => a.len(),
+            Content::RegularArray(a) => a.len(),
+            Content::RecordArray(a) => a.len(),
+            Content::IndexedOptionArray(a) => a.len(),
+            Content::UnionArray(_) => unimplemented!("UnionArray::len"),
+        }
+    }
+
+    fn getitem(&self, index: usize) -> Arc<dyn Layout> {
+        match self {
+            Content::Bool(a) => a.getitem(index),
+            Content::I64(a) => a.getitem(index),
+            Content::F64(a) => a.getitem(index),
+            Content::ListOffsetArray(a) => a.getitem(index),
+            Content::RegularArray(a) => a.getitem(index),
+            Content::RecordArray(a) => a.getitem(index),
+            Content::IndexedOptionArray(a) => a.getitem(index),
+            Content::UnionArray(_) => unimplemented!("UnionArray::getitem"),
+        }
+    }
+
+    fn slice(&self, start: usize, stop: usize) -> Arc<dyn Layout> {
+        match self {
+            Content::Bool(a) => a.slice(start, stop),
+            Content::I64(a) => a.slice(start, stop),
+            Content::F64(a) => a.slice(start, stop),
+            Content::ListOffsetArray(a) => a.slice(start, stop),
+            Content::RegularArray(a) => a.slice(start, stop),
+            Content::RecordArray(a) => a.slice(start, stop),
+            Content::IndexedOptionArray(a) => a.slice(start, stop),
+            Content::UnionArray(_) => unimplemented!("UnionArray::slice"),
+        }
+    }
+
+    fn typetracer(&self) -> Arc<dyn Layout> {
+        match self {
+            Content::Bool(a) => a.typetracer(),
+            Content::I64(a) => a.typetracer(),
+            Content::F64(a) => a.typetracer(),
+            Content::ListOffsetArray(a) => a.typetracer(),
+            Content::RegularArray(_) => unimplemented!("RegularArray::typetracer"),
+            Content::RecordArray(_) => unimplemented!("RecordArray::typetracer"),
+            Content::IndexedOptionArray(_) => unimplemented!("IndexedOptionArray::typetracer"),
+            Content::UnionArray(_) => unimplemented!("UnionArray::typetracer"),
+        }
+    }
+}
+
+// ── Inline stub types ─────────────────────────────────────────────────────────
 
 #[derive(Clone, Debug)]
 pub struct UnionArray {
@@ -52,10 +111,11 @@ pub struct UnionArray {
 // ── Content methods ───────────────────────────────────────────────────────────
 
 impl Content {
-    /// Outer length (number of items at this level).
     pub fn len(&self) -> usize {
         match self {
-            Content::NumpyArray(a) => a.len(),
+            Content::Bool(a) => a.len(),
+            Content::I64(a) => a.len(),
+            Content::F64(a) => a.len(),
             Content::ListOffsetArray(a) => a.len(),
             Content::RegularArray(a) => a.len(),
             Content::RecordArray(a) => a.len(),
@@ -68,18 +128,26 @@ impl Content {
         self.len() == 0
     }
 
+    pub fn dtype(&self) -> Option<DType> {
+        match self {
+            Content::Bool(a) => Some(a.dtype),
+            Content::I64(a) => Some(a.dtype),
+            Content::F64(a) => Some(a.dtype),
+            _ => None,
+        }
+    }
+
     /// Field access for RecordArray (and option-of-record, regular-of-record).
     pub fn get_field(&self, name: &str) -> Option<Arc<Content>> {
         match self {
             Content::RecordArray(r) => {
                 let i = r.fields.iter().position(|f| f == name)?;
-                Some(r.contents[i].clone())
+                Some(r.contents[i].clone()) // Arc::clone — free
             }
             Content::ListOffsetArray(a) => {
-                // field access propagates through list structure
                 let inner = a.content.get_field(name)?;
                 Some(Arc::new(Content::ListOffsetArray(ListOffsetArray {
-                    offsets: a.offsets.clone(),
+                    offsets: a.offsets.clone(), // Arc::clone — free
                     content: inner,
                 })))
             }
@@ -94,7 +162,7 @@ impl Content {
             Content::IndexedOptionArray(a) => {
                 let inner = a.content.get_field(name)?;
                 Some(Arc::new(Content::IndexedOptionArray(IndexedOptionArray {
-                    index: a.index.clone(),
+                    index: a.index.clone(), // Arc::clone — free
                     content: inner,
                 })))
             }
@@ -105,61 +173,97 @@ impl Content {
     /// Get field by position index (for tuple-style RecordArray with no names).
     pub fn get_field_at(&self, i: usize) -> Option<Arc<Content>> {
         match self {
-            Content::RecordArray(r) => r.contents.get(i).cloned(),
+            Content::RecordArray(r) => r.contents.get(i).cloned(), // Arc::clone — free
+            Content::ListOffsetArray(a) => {
+                let inner = a.content.get_field_at(i)?;
+                Some(Arc::new(Content::ListOffsetArray(ListOffsetArray {
+                    offsets: a.offsets.clone(),
+                    content: inner,
+                })))
+            }
+            Content::RegularArray(a) => {
+                let inner = a.content.get_field_at(i)?;
+                Some(Arc::new(Content::RegularArray(RegularArray {
+                    content: inner,
+                    size: a.size,
+                    length: a.length,
+                })))
+            }
+            Content::IndexedOptionArray(a) => {
+                let inner = a.content.get_field_at(i)?;
+                Some(Arc::new(Content::IndexedOptionArray(IndexedOptionArray {
+                    index: a.index.clone(),
+                    content: inner,
+                })))
+            }
             _ => None,
         }
     }
-}
 
-// ── Content traits ────────────────────────────────────────────────────────────
-
-pub trait ArrayLike {
-    fn len(&self) -> usize;
-    fn is_empty(&self) -> bool {
-        self.len() == 0
+    /// Like Layout::slice but returns Arc<Content> for internal struct field use.
+    pub fn slice_arc(&self, start: usize, stop: usize) -> Arc<Content> {
+        match self {
+            Content::Bool(a) => Arc::new(Content::Bool(a.slice_range(start, stop))),
+            Content::I64(a) => Arc::new(Content::I64(a.slice_range(start, stop))),
+            Content::F64(a) => Arc::new(Content::F64(a.slice_range(start, stop))),
+            Content::ListOffsetArray(a) => {
+                let base = a.offsets[start];
+                let new_offsets: Arc<[i64]> = a.offsets[start..=stop]
+                    .iter()
+                    .map(|&o| o - base)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice()
+                    .into();
+                let cs = a.offsets[start] as usize;
+                let ce = a.offsets[stop] as usize;
+                Arc::new(Content::ListOffsetArray(ListOffsetArray {
+                    offsets: new_offsets,
+                    content: a.content.slice_arc(cs, ce),
+                }))
+            }
+            Content::RecordArray(r) => {
+                let contents = r
+                    .contents
+                    .iter()
+                    .map(|c| c.slice_arc(start, stop))
+                    .collect();
+                Arc::new(Content::RecordArray(RecordArray {
+                    fields: r.fields.clone(), // Arc<[Arc<str>]> clone once refactored
+                    contents,
+                    length: stop - start,
+                }))
+            }
+            _ => Arc::new(self.clone()),
+        }
     }
-}
 
-pub trait SequentialArray: ArrayLike {
-    fn offsets(&self) -> &[i64];
-    fn content(&self) -> &Content;
-}
-
-pub trait MappingArray: ArrayLike {
-    fn fields(&self) -> &[String];
-    fn field(&self, name: &str) -> Option<&Content>;
-}
-
-impl ArrayLike for ListOffsetArray {
-    fn len(&self) -> usize {
-        self.offsets.len().saturating_sub(1)
-    }
-}
-
-impl ArrayLike for RecordArray {
-    fn len(&self) -> usize {
-        self.length
-    }
-}
-
-impl SequentialArray for ListOffsetArray {
-    fn offsets(&self) -> &[i64] {
-        &self.offsets
-    }
-    fn content(&self) -> &Content {
-        &self.content
-    }
-}
-
-impl MappingArray for RecordArray {
-    fn fields(&self) -> &[String] {
-        &self.fields
-    }
-    fn field(&self, name: &str) -> Option<&Content> {
-        self.fields
-            .iter()
-            .position(|f| f == name)
-            .map(|i| &*self.contents[i])
+    /// Like Layout::typetracer but returns Arc<Content>.
+    pub fn typetracer_arc(&self) -> Arc<Content> {
+        match self {
+            Content::Bool(_) => Arc::new(Content::Bool(NumpyArray {
+                data: Arc::from([] as [bool; 0]),
+                shape: vec![0],
+                strides: vec![1],
+                dtype: DType::Bool,
+            })),
+            Content::I64(_) => Arc::new(Content::I64(NumpyArray {
+                data: Arc::from([] as [i64; 0]),
+                shape: vec![0],
+                strides: vec![1],
+                dtype: DType::I64,
+            })),
+            Content::F64(_) => Arc::new(Content::F64(NumpyArray {
+                data: Arc::from([] as [f64; 0]),
+                shape: vec![0],
+                strides: vec![1],
+                dtype: DType::F64,
+            })),
+            Content::ListOffsetArray(a) => Arc::new(Content::ListOffsetArray(ListOffsetArray {
+                offsets: Arc::from([0_i64] as [i64; 1]),
+                content: a.content.typetracer_arc(),
+            })),
+            _ => Arc::new(self.clone()),
+        }
     }
 }
 
@@ -167,33 +271,71 @@ impl MappingArray for RecordArray {
 
 /// Merge a homogeneous Vec<Content> of the same variant into a single Content.
 /// Returns None if children is empty or types are mixed.
-pub fn merge_contents_same_type(mut children: Vec<Content>) -> Option<Content> {
+pub fn merge_contents_same_type(children: Vec<Content>) -> Option<Content> {
     if children.is_empty() {
-        return Some(Content::NumpyArray(NumpyArray {
-            data: Arc::from(vec![].into_boxed_slice()),
+        return Some(Content::F64(NumpyArray {
+            data: Arc::from([] as [f64; 0]),
             shape: vec![0],
             strides: vec![1],
+            dtype: DType::F64,
         }));
     }
 
-    // All NumpyArray
-    if children.iter().all(|c| matches!(c, Content::NumpyArray(_))) {
-        let flat: Vec<f64> = children
+    // ── Numeric variants: must copy data to produce a flat buffer ─────────────
+
+    if children.iter().all(|c| matches!(c, Content::Bool(_))) {
+        let flat: Vec<bool> = children
             .iter()
             .flat_map(|c| match c {
-                Content::NumpyArray(a) => a.data.iter().copied().collect::<Vec<_>>(),
+                Content::Bool(a) => a.data.iter().copied().collect::<Vec<_>>(),
                 _ => unreachable!(),
             })
             .collect();
         let len = flat.len();
-        return Some(Content::NumpyArray(NumpyArray {
+        return Some(Content::Bool(NumpyArray {
             data: Arc::from(flat.into_boxed_slice()),
             shape: vec![len],
             strides: vec![1],
+            dtype: DType::Bool,
         }));
     }
 
-    // All RecordArray — merge column-wise
+    if children.iter().all(|c| matches!(c, Content::I64(_))) {
+        let flat: Vec<i64> = children
+            .iter()
+            .flat_map(|c| match c {
+                Content::I64(a) => a.data.iter().copied().collect::<Vec<_>>(),
+                _ => unreachable!(),
+            })
+            .collect();
+        let len = flat.len();
+        return Some(Content::I64(NumpyArray {
+            data: Arc::from(flat.into_boxed_slice()),
+            shape: vec![len],
+            strides: vec![1],
+            dtype: DType::I64,
+        }));
+    }
+
+    if children.iter().all(|c| matches!(c, Content::F64(_))) {
+        let flat: Vec<f64> = children
+            .iter()
+            .flat_map(|c| match c {
+                Content::F64(a) => a.data.iter().copied().collect::<Vec<_>>(),
+                _ => unreachable!(),
+            })
+            .collect();
+        let len = flat.len();
+        return Some(Content::F64(NumpyArray {
+            data: Arc::from(flat.into_boxed_slice()),
+            shape: vec![len],
+            strides: vec![1],
+            dtype: DType::F64,
+        }));
+    }
+
+    // ── RecordArray: merge column-wise ────────────────────────────────────────
+
     if children
         .iter()
         .all(|c| matches!(c, Content::RecordArray(_)))
@@ -202,140 +344,73 @@ pub fn merge_contents_same_type(mut children: Vec<Content>) -> Option<Content> {
             Content::RecordArray(r) => r.fields.clone(),
             _ => unreachable!(),
         };
-        let n = children.len();
-        let mut per_field: Vec<Vec<Content>> = vec![Vec::new(); fields.len()];
-        for child in children.drain(..) {
+        let total_rows: usize = children
+            .iter()
+            .map(|c| match c {
+                Content::RecordArray(r) => r.length,
+                _ => unreachable!(),
+            })
+            .sum();
+
+        let num_fields = fields.len();
+        // Collect per-column as Arc<Content> — no unwrap, no deep clone.
+        let mut per_field: Vec<Vec<Arc<Content>>> = vec![Vec::new(); num_fields];
+        for child in children {
             if let Content::RecordArray(r) = child {
-                for (i, c) in r.contents.into_iter().enumerate() {
-                    per_field[i].push(Arc::try_unwrap(c).unwrap_or_else(|arc| (*arc).clone()));
+                for (i, arc) in r.contents.into_iter().enumerate() {
+                    per_field[i].push(arc); // Arc::clone implicit via move
                 }
             }
         }
-        let contents = per_field
+        let contents: Vec<Arc<Content>> = per_field
             .into_iter()
-            .map(|items| Arc::new(merge_contents_same_type(items).unwrap()))
+            .map(|arcs| Arc::new(merge_arc_contents(arcs).unwrap()))
             .collect();
         return Some(Content::RecordArray(RecordArray {
             fields,
             contents,
-            length: n,
+            length: total_rows,
         }));
     }
 
-    // All ListOffsetArray — merge into single flat ListOffsetArray
+    // ── ListOffsetArray: concatenate sub-lists ────────────────────────────────
     if children
         .iter()
         .all(|c| matches!(c, Content::ListOffsetArray(_)))
     {
         let mut merged_offsets: Vec<i64> = vec![0];
-        let mut flat_values: Vec<f64> = Vec::new();
-        for child in children.drain(..) {
+        let mut inner_arcs: Vec<Arc<Content>> = Vec::new();
+
+        for child in children {
             if let Content::ListOffsetArray(a) = child {
                 let base = *merged_offsets.last().unwrap();
                 for &o in a.offsets.iter().skip(1) {
                     merged_offsets.push(base + o);
                 }
-                if let Content::NumpyArray(inner) =
-                    Arc::try_unwrap(a.content).unwrap_or_else(|arc| (*arc).clone())
-                {
-                    flat_values.extend_from_slice(&inner.data);
-                }
+                inner_arcs.push(a.content); // Arc move — free
             }
         }
-        let len = flat_values.len();
+        let merged_inner = merge_arc_contents(inner_arcs)?;
         return Some(Content::ListOffsetArray(ListOffsetArray {
             offsets: Arc::from(merged_offsets.into_boxed_slice()),
-            content: Arc::new(Content::NumpyArray(NumpyArray {
-                data: Arc::from(flat_values.into_boxed_slice()),
-                shape: vec![len],
-                strides: vec![1],
-            })),
+            content: Arc::new(merged_inner),
         }));
     }
 
     None
 }
 
-// #[derive(Clone, Debug)]
-// pub enum Content {
-//     NumpyArray(NumpyArray),
-//     ListOffsetArray(ListOffsetArray),
-//     RegularArray(RegularArray),
-//     RecordArray(RecordArray),
-//     UnionArray(UnionArray),
-// }
-
-// impl Content {
-//     pub fn len(&self) -> usize {
-//         match self {
-//             Content::NumpyArray(a) => a.len(),
-//             Content::ListOffsetArray(a) => a.len(),
-//             Content::RecordArray(a) => a.len(),
-//             &Content::RegularArray(_) | &Content::UnionArray(_) => todo!(),
-//         }
-//     }
-
-//     pub fn is_empty(&self) -> bool {
-//         self.len() == 0
-//     }
-
-//     pub fn get_field(&self, i: usize) -> Option<&Arc<Content>> {
-//         match self {
-//             Content::RecordArray(r) => r.get_field(i),
-//             _ => None,
-//         }
-//     }
-// }
-
-// #[derive(Clone, Debug)]
-// pub struct RegularArray {
-//     pub size: usize,           // fixed size per slot
-//     pub content: Arc<Content>, // length = size * len(self)
-// }
-
-// #[derive(Clone, Debug)]
-// pub struct UnionArray {
-//     pub tags: Arc<[u8]>,       // which variant
-//     pub index: Arc<[i64]>,     // index into each child
-//     pub contents: Vec<Arc<Content>>,
-// }
-
-// pub trait ArrayLike {
-//     fn len(&self) -> usize;
-//     fn is_empty(&self) -> bool { self.len() == 0 }
-// }
-
-// pub trait SequentialArray: ArrayLike {
-//     fn offsets(&self) -> &[i64];
-//     fn content(&self) -> &Content;
-// }
-
-// pub trait MappingArray: ArrayLike {
-//     fn fields(&self) -> &[String];
-//     fn field(&self, name: &str) -> Option<&Content>;
-// }
-
-// impl ArrayLike for ListOffsetArray {
-//     fn len(&self) -> usize {
-//         self.offsets.len() - 1
-//     }
-// }
-
-// impl ArrayLike for RecordArray {
-//     fn len(&self) -> usize {
-//         self.length
-//     }
-// }
-
-// impl SequentialArray for ListOffsetArray {
-//     fn offsets(&self) -> &[i64] { &self.offsets }
-//     fn content(&self) -> &Content { &self.content }
-// }
-
-// impl MappingArray for RecordArray {
-//     fn fields(&self) -> &[String] { &self.fields }
-//     fn field(&self, name: &str) -> Option<&Content> {
-//         self.fields.iter().position(|f| f == name)
-//             .map(|i| &*self.contents[i])
-//     }
-// }
+/// Merge a Vec<Arc<Content>> of the same variant.
+/// Accepts Arc<Content> directly — no unwrapping, no deep clones.
+fn merge_arc_contents(arcs: Vec<Arc<Content>>) -> Option<Content> {
+    // Unwrap each Arc only if we are the sole owner (common after drain);
+    // otherwise clone the inner Content. Since these Arcs were just moved
+    // out of their owning structs, try_unwrap succeeds in the common case.
+    // When it fails (shared Arc), the clone is of a single array node,
+    // not a deep subtree.
+    let children: Vec<Content> = arcs
+        .into_iter()
+        .map(|arc| Arc::try_unwrap(arc).unwrap_or_else(|a| (*a).clone()))
+        .collect();
+    merge_contents_same_type(children)
+}

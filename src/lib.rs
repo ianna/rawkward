@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #[cfg(feature = "python")]
-use crate::python::layout::{
+use crate::python::py_layout::{
     PyIndex, PyIndexedOptionArray, PyListOffsetArray, PyNumpyArray, PyRecordArray, PyRegularArray,
 };
 
@@ -10,7 +10,9 @@ use crate::python::layout::{
 use pyo3::prelude::*;
 
 mod content;
+mod dtype;
 mod kernels;
+mod layout;
 mod python;
 
 #[cfg(feature = "python")]
