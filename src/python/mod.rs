@@ -11,4 +11,4 @@ pub use py_array::PyArray;
 pub mod convert;
 
 #[cfg(feature = "python")]
-pub mod layout;
+pub mod py_layout;
