@@ -233,6 +233,12 @@ impl Content {
                     length: stop - start,
                 }))
             }
+            Content::IndexedOptionArray(a) => Arc::new(Content::IndexedOptionArray(
+                crate::content::IndexedOptionArray {
+                    index: Arc::from(a.index[start..stop].to_vec().into_boxed_slice()),
+                    content: a.content.clone(),
+                },
+            )),
             _ => Arc::new(self.clone()),
         }
     }

@@ -124,6 +124,16 @@ fn from_python_object_inner(obj: &Bound<'_, PyAny>, is_field_value: bool) -> PyR
     // Handle None values → IndexedOptionArray
     let has_none = outer.iter().any(|item| item.is_none());
     if has_none {
+        // Determine whether non-None items are dicts (flat records) or lists.
+        // We need to pass the right context to children the same way the non-None
+        // path below does: dict items should NOT be wrapped in ListOffsetArray,
+        // list items should be (via is_field_value=true when inside a list slot).
+        let non_none_are_dicts = outer
+            .iter()
+            .filter(|item| !item.is_none())
+            .all(|item| item.downcast::<PyDict>().is_ok());
+        let child_is_field = !non_none_are_dicts;
+
         let mut index: Vec<i64> = Vec::with_capacity(outer.len());
         let mut valid_children: Vec<Content> = Vec::new();
         for item in outer.iter() {
@@ -131,7 +141,7 @@ fn from_python_object_inner(obj: &Bound<'_, PyAny>, is_field_value: bool) -> PyR
                 index.push(-1);
             } else {
                 index.push(valid_children.len() as i64);
-                valid_children.push(from_python_object(&item)?);
+                valid_children.push(from_python_object_inner(&item, child_is_field)?);
             }
         }
         let content = if valid_children.is_empty() {
@@ -150,17 +160,23 @@ fn from_python_object_inner(obj: &Bound<'_, PyAny>, is_field_value: bool) -> PyR
         }));
     }
 
-    // Collect children
-    let mut children: Vec<Content> = Vec::new();
-    for item in outer.iter() {
-        children.push(from_python_object(&item)?);
+    // If every item is a dict, this is a flat list of records — merge them
+    // column-wise into a single RecordArray with no ListOffsetArray wrapper.
+    // e.g. [{x:1,y:2}, {x:3,y:4}]  →  RecordArray(length=2)
+    let all_dicts = outer.iter().all(|item| item.downcast::<PyDict>().is_ok());
+    if all_dicts {
+        let mut children: Vec<Content> = Vec::new();
+        for item in outer.iter() {
+            children.push(from_python_object_inner(&item, is_field_value)?);
+        }
+        return merge_contents(children);
     }
 
-    if children
-        .iter()
-        .all(|c| matches!(c, Content::RecordArray(_)))
-    {
-        return merge_contents(children);
+    // Otherwise items are lists (or scalars) — wrap in ListOffsetArray.
+    // Each item becomes one slot: [[...], [...]]  →  ListOffsetArray(RecordArray)
+    let mut children: Vec<Content> = Vec::new();
+    for item in outer.iter() {
+        children.push(from_python_object_inner(&item, is_field_value)?);
     }
 
     let mut offsets: Vec<i64> = vec![0];
@@ -518,6 +534,16 @@ fn scalar_or_list(c: &Content, py: Python<'_>) -> PyResult<PyObject> {
         Content::F64(a) if a.data.len() == 1 => {
             let val: f64 = a.data[0];
             Ok(val.into_pyobject(py)?.into_any().unbind())
+        }
+        // A ListOffsetArray with exactly one slot is the wrapping we add for
+        // list-items inside an IndexedOptionArray (e.g. [[1.0,2.0], None, [3.0]]).
+        // Unwrap that single slot so the item renders as [1.0, 2.0], not [[1.0, 2.0]].
+        Content::ListOffsetArray(a) if a.len() == 1 => {
+            let inner = (*a
+                .content
+                .slice_arc(a.offsets[0] as usize, a.offsets[1] as usize))
+            .clone();
+            content_to_pyobject(&inner, py)
         }
         _ => content_to_pyobject(c, py),
     }
