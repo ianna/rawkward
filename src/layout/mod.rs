@@ -11,7 +11,7 @@ pub trait Layout: Send + Sync + std::fmt::Debug {
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
-    
+
     /// Retrieves a single element (or child layout) at the specified index.
     fn getitem(&self, index: usize) -> Arc<dyn Layout>;
 

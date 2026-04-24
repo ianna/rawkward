@@ -7,8 +7,8 @@ use pyo3::prelude::*;
 use pyo3::types::PyAny;
 
 use rawkward::content::{Content, NumpyArray};
-use rawkward::kernels::{Slice, slice};
 use rawkward::dtype::DType;
+use rawkward::kernels::{Slice, slice};
 
 #[pyclass]
 pub struct PyArray {
@@ -23,7 +23,7 @@ impl PyArray {
         let seq = obj.extract::<Vec<f64>>()?;
         let data: Arc<[f64]> = Arc::from(seq.into_boxed_slice());
 
-        let array = NumpyArray { 
+        let array = NumpyArray {
             data,
             shape: vec![obj.len()?],
             strides: vec![8],
@@ -53,7 +53,7 @@ fn main() -> PyResult<()> {
     Python::with_gil(|py| {
         let list = pyo3::types::PyList::new(py, vec![1.0, 2.0, 3.0])?;
         let py_array = PyArray::new(list.as_any().clone())?;
-        
+
         println!("Array created! Length: {}", py_array.__len__());
         Ok(())
     })
