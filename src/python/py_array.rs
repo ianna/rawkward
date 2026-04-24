@@ -46,7 +46,6 @@ fn content_nbytes(c: &Content) -> usize {
 
 fn fmt_content(c: &Content) -> String {
     match c {
-        // Bug 1 fix: Content::NumpyArray doesn't exist — three typed arms
         Content::Bool(a) => {
             let items: Vec<String> = a.data.iter().map(|x| format!("{x}")).collect();
             format!("[{}]", items.join(", "))
@@ -80,7 +79,6 @@ fn fmt_content(c: &Content) -> String {
             format!("[{}]", rows.join(", "))
         }
         Content::RegularArray(a) => {
-            // Bug 3 fix: use get() instead of nonexistent slice_at()
             let items: Vec<String> = (0..a.length)
                 .map(|i| a.get(i).map(|c| fmt_preview(&c, 20)).unwrap_or("?".into()))
                 .collect();
@@ -120,7 +118,6 @@ fn fmt_preview(c: &Content, limit: usize) -> String {
             let n = a.len();
             let show = n.min(limit);
             let mut parts: Vec<String> = (0..show)
-                // Bug 2 fix: use get(i) instead of a.slice(i)
                 .map(|i| {
                     a.get(i)
                         .map(|c| fmt_preview(&c, limit))
@@ -168,12 +165,10 @@ fn fmt_scalar(col: &Content, row: usize) -> String {
                 "?".into()
             }
         }
-        Content::ListOffsetArray(a) => {
-            // Bug 2 fix: use get(row) instead of a.slice(row)
-            a.get(row)
-                .map(|c| fmt_preview(&c, 20))
-                .unwrap_or("?".into())
-        }
+        Content::ListOffsetArray(a) => a
+            .get(row)
+            .map(|c| fmt_preview(&c, 20))
+            .unwrap_or("?".into()),
         Content::RecordArray(r) => {
             let pairs: Vec<String> = r
                 .fields
@@ -189,9 +184,9 @@ fn fmt_scalar(col: &Content, row: usize) -> String {
 
 fn content_type_str(c: &Content) -> String {
     match c {
-        Content::Bool(a) => format!("{:?}", a.dtype).to_lowercase(),
-        Content::I64(a) => format!("{:?}", a.dtype).to_lowercase(),
-        Content::F64(a) => format!("{:?}", a.dtype).to_lowercase(),
+        Content::Bool(_) => "bool".into(),
+        Content::I64(_) => "int64".into(),
+        Content::F64(_) => "float64".into(),
         Content::ListOffsetArray(a) => format!("var * {}", content_type_str(&a.content)),
         Content::RecordArray(r) => {
             let fields: Vec<String> = r

@@ -77,7 +77,7 @@ impl Layout for IndexedOptionArray {
     fn slice(&self, start: usize, stop: usize) -> Arc<dyn Layout> {
         Arc::new(IndexedOptionArray {
             index: Arc::from(self.index[start..stop].to_vec().into_boxed_slice()),
-            content: self.content.clone(), // Arc::clone — free
+            content: self.content.clone(),
         })
     }
 
