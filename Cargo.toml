@@ -17,7 +17,7 @@ python = ["pyo3/extension-module"]
 bin_testing = ["pyo3/auto-initialize"]
 
 [dependencies]
-pyo3 = { version = "0.23", optional = true, features = ["abi3-py39"] }
+pyo3 = { version = "0.23", optional = true, features = ["abi3-py39", "auto-initialize"] }
 arrow = "53"
 arrow-buffer = "53"
 rayon = "1.10"
