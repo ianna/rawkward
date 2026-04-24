@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 use crate::content::{
-    Content, IndexedOptionArray, ListOffsetArray, NumpyArray, RecordArray, RegularArray,
+    Content, IndexedOptionArray, NumpyArray, RecordArray,
 };
 use crate::dtype::DType;
 use std::sync::Arc;
@@ -32,6 +32,7 @@ pub fn slice(content: &Content, s: &Slice) -> Result<Content, SliceError> {
                 dtype: DType::Bool,
             }))
         }
+
         (Content::I64(a), Slice::Index(i)) => {
             let idx = normalize_index(*i, a.data.len())?;
             Ok(Content::I64(NumpyArray {
@@ -41,6 +42,7 @@ pub fn slice(content: &Content, s: &Slice) -> Result<Content, SliceError> {
                 dtype: DType::I64,
             }))
         }
+
         (Content::F64(a), Slice::Index(i)) => {
             let idx = normalize_index(*i, a.data.len())?;
             Ok(Content::F64(NumpyArray {
@@ -52,7 +54,6 @@ pub fn slice(content: &Content, s: &Slice) -> Result<Content, SliceError> {
         }
 
         (Content::ListOffsetArray(a), Slice::Index(i)) => {
-            // Bug 1 fix: normalize index then extract sub-list via offset arithmetic
             let idx = normalize_index(*i, a.len())?;
             let start = a.offsets[idx] as usize;
             let stop = a.offsets[idx + 1] as usize;
@@ -60,7 +61,6 @@ pub fn slice(content: &Content, s: &Slice) -> Result<Content, SliceError> {
         }
 
         (Content::RegularArray(a), Slice::Index(i)) => {
-            // Bug 2 fix: normalize index, compute content range from size
             let idx = normalize_index(*i, a.length)?;
             let start = idx * a.size;
             let stop = start + a.size;
@@ -69,7 +69,6 @@ pub fn slice(content: &Content, s: &Slice) -> Result<Content, SliceError> {
 
         (Content::RecordArray(r), Slice::Index(i)) => {
             let idx = normalize_index(*i, r.length)?;
-            // Bug 3 fix: restore length: 1 in result
             let contents: Vec<Arc<Content>> = r
                 .contents
                 .iter()
@@ -78,7 +77,7 @@ pub fn slice(content: &Content, s: &Slice) -> Result<Content, SliceError> {
             Ok(Content::RecordArray(RecordArray {
                 fields: r.fields.clone(),
                 contents,
-                length: 1, // Bug 3 fix: single row result
+                length: 1,
             }))
         }
 

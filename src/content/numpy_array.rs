@@ -60,7 +60,7 @@ impl<T: Copy + Send + Sync + 'static + ToDType + Default> NumpyArray<T> {
             data: Arc::from(v.into_boxed_slice()),
             shape: vec![len],
             strides: vec![1],
-            dtype: dtype,
+            dtype,
         }
     }
     pub fn len(&self) -> usize {

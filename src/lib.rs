@@ -9,11 +9,11 @@ use crate::python::py_layout::{
 #[cfg(feature = "python")]
 use pyo3::prelude::*;
 
-mod content;
-mod dtype;
-mod kernels;
-mod layout;
-mod python;
+pub mod content;
+pub mod dtype;
+pub mod kernels;
+pub mod layout;
+pub mod python;
 
 #[cfg(feature = "python")]
 #[pymodule]
