@@ -7,6 +7,11 @@ pub trait Layout: Send + Sync + std::fmt::Debug {
     /// Returns the number of elements in the current layout level.
     fn len(&self) -> usize;
 
+    /// Returns true if the layout has no elements.
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    
     /// Retrieves a single element (or child layout) at the specified index.
     fn getitem(&self, index: usize) -> Arc<dyn Layout>;
 

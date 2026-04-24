@@ -4,7 +4,6 @@
 #![allow(dead_code)]
 #![cfg(feature = "python")]
 
-use crate::layout::Layout;
 use std::sync::Arc;
 
 use pyo3::prelude::*;

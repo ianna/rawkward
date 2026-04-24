@@ -15,7 +15,6 @@ use super::py_layout::{
 use crate::content::indexed_option_array::OptionValue;
 use crate::content::{Content, IndexedOptionArray, ListOffsetArray, NumpyArray};
 use crate::dtype::DType;
-use crate::layout::Layout;
 
 // ── Construction from Python ──────────────────────────────────────────────────
 pub fn from_python_object(obj: &Bound<'_, PyAny>) -> PyResult<Content> {
