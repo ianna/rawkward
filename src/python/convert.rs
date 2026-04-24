@@ -132,7 +132,7 @@ fn from_python_object_inner(obj: &Bound<'_, PyAny>, is_field_value: bool) -> PyR
             .iter()
             .filter(|item| !item.is_none())
             .all(|item| item.downcast::<PyDict>().is_ok());
-        let child_is_field = if non_none_are_dicts { false } else { true };
+        let child_is_field = !non_none_are_dicts;
 
         let mut index: Vec<i64> = Vec::with_capacity(outer.len());
         let mut valid_children: Vec<Content> = Vec::new();
