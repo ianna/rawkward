@@ -13,10 +13,11 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["python"]
-python = ["pyo3/extension-module"]
+python = ["pyo3"]
+py_module = ["pyo3/extension-module"]
 
 [dependencies]
-pyo3 = { version = "0.23", optional = true, features = ["abi3-py39"] }
+pyo3 = { version = "0.23", optional = true, features = ["abi3-py39", "auto-initialize"] }
 arrow = "53"
 arrow-buffer = "53"
 rayon = "1.10"

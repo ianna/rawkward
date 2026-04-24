@@ -20,11 +20,7 @@ pub struct RegularArray {
 
 impl RegularArray {
     pub fn new(content: Arc<Content>, size: usize, zeros_length: usize) -> Self {
-        let length = if size == 0 {
-            zeros_length
-        } else {
-            content.len() / size
-        };
+        let length = content.len().checked_div(size).unwrap_or(zeros_length);
         RegularArray {
             content,
             size,
