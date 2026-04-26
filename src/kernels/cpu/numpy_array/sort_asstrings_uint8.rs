@@ -26,10 +26,10 @@ pub fn numpy_array_sort_asstrings_uint8(
     }).collect();
 
     if stable {
-        if ascending { words.sort_by(|a, b| a.cmp(b)); }
+        if ascending { words.sort(); }
         else         { words.sort_by(|a, b| b.cmp(a)); }
     } else if ascending {
-        words.sort_unstable_by(|a, b| a.cmp(b));
+        words.sort_unstable();
     } else {
         words.sort_unstable_by(|a, b| b.cmp(a));
     }

@@ -24,7 +24,7 @@ pub fn unique_ranges_bool(
         toptr[m] = toptr[start];
         m += 1;
         for k in start..stop {
-            if (toptr[m - 1] != false) != (toptr[k] != false) {
+            if toptr[m - 1] != toptr[k] {
                 toptr[m] = toptr[k];
                 m += 1;
             }

@@ -1,6 +1,18 @@
 // Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
+// These kernels are direct ports of `awkward/src/cpu-kernels/awkward_*.cpp`.
+// They are intentionally C-style: many array-slice parameters, index-based
+// loops, and signature shapes preserved for ABI parity. The clippy lints
+// below would all suggest refactors that would either distort the port or
+// break the public symbol naming, so we silence them at the module root.
+#![allow(
+    clippy::too_many_arguments,
+    clippy::needless_range_loop,
+    clippy::module_inception,
+    clippy::doc_overindented_list_items,
+)]
+
 //! # cpu-kernels
 //!
 //! Pure-Rust implementations of the Awkward Array CPU kernels originally

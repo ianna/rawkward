@@ -44,8 +44,8 @@ use crate::kernels::cpu::kernel_utils::list_array_combinations_step_64;
 /// assert_eq!(tocarry[1], vec![1, 2, 2]);
 /// ```
 pub fn list_array_combinations<C>(
-    tocarry: &mut Vec<Vec<i64>>,
-    toindex: &mut Vec<usize>,
+    tocarry: &mut [Vec<i64>],
+    toindex: &mut [usize],
     fromindex: &mut Vec<i64>,
     n: usize,
     replacement: bool,
@@ -73,8 +73,8 @@ pub fn list_array_combinations<C>(
 }
 
 pub fn list_array32_combinations_64(
-    tocarry: &mut Vec<Vec<i64>>,
-    toindex: &mut Vec<usize>,
+    tocarry: &mut [Vec<i64>],
+    toindex: &mut [usize],
     fromindex: &mut Vec<i64>,
     n: usize,
     replacement: bool,
@@ -84,8 +84,8 @@ pub fn list_array32_combinations_64(
     list_array_combinations(tocarry, toindex, fromindex, n, replacement, starts, stops);
 }
 pub fn list_array_u32_combinations_64(
-    tocarry: &mut Vec<Vec<i64>>,
-    toindex: &mut Vec<usize>,
+    tocarry: &mut [Vec<i64>],
+    toindex: &mut [usize],
     fromindex: &mut Vec<i64>,
     n: usize,
     replacement: bool,
@@ -95,8 +95,8 @@ pub fn list_array_u32_combinations_64(
     list_array_combinations(tocarry, toindex, fromindex, n, replacement, starts, stops);
 }
 pub fn list_array64_combinations_64(
-    tocarry: &mut Vec<Vec<i64>>,
-    toindex: &mut Vec<usize>,
+    tocarry: &mut [Vec<i64>],
+    toindex: &mut [usize],
     fromindex: &mut Vec<i64>,
     n: usize,
     replacement: bool,

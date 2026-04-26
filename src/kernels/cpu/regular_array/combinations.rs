@@ -39,8 +39,8 @@ use crate::kernels::cpu::kernel_utils::list_array_combinations_step_64;
 /// assert_eq!(tocarry[1], vec![1, 2, 2, 4, 5, 5]);
 /// ```
 pub fn regular_array_combinations_64(
-    tocarry: &mut Vec<Vec<i64>>,
-    toindex: &mut Vec<usize>,
+    tocarry: &mut [Vec<i64>],
+    toindex: &mut [usize],
     fromindex: &mut Vec<i64>,
     n: usize,
     replacement: bool,

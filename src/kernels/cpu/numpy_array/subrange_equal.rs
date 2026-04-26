@@ -58,8 +58,9 @@ pub fn numpy_array_subrange_equal_bool(
             if leftlen == rightlen {
                 differ = false;
                 for j in 0..leftlen {
-                    if (tmpptr[fromstarts[i] as usize + j] != false) !=
-                       (tmpptr[fromstarts[ii] as usize + j] != false) {
+                    if tmpptr[fromstarts[i] as usize + j]
+                        != tmpptr[fromstarts[ii] as usize + j]
+                    {
                         differ = true;
                         break;
                     }

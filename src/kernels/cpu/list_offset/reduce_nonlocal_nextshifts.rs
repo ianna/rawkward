@@ -59,9 +59,7 @@ pub fn list_offset_array_reduce_nonlocal_nextshifts_64(
         }
 
         // Record the shift for each real element.
-        for j in 0..count {
-            missing[start + j] = nummissing[j];
-        }
+        missing[start..start + count].copy_from_slice(&nummissing[..count]);
     }
 
     for j in 0..nextcarry.len() {

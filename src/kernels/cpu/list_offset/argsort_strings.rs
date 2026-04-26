@@ -101,18 +101,16 @@ pub fn list_offset_array_argsort_strings(
 
     for i in 0..=length {
         let new_parent = if i < length { fromparents[i] } else { -2 };
-        if i == length || new_parent != last_parent {
-            if !group.is_empty() {
-                flush(
-                    &mut group,
-                    first_index,
-                    tocarry,
-                    is_stable,
-                    is_ascending,
-                    is_local,
-                    &cmp_strings,
-                );
-            }
+        if (i == length || new_parent != last_parent) && !group.is_empty() {
+            flush(
+                &mut group,
+                first_index,
+                tocarry,
+                is_stable,
+                is_ascending,
+                is_local,
+                &cmp_strings,
+            );
         }
         if i < length {
             if group.is_empty() {

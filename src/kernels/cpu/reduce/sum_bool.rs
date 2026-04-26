@@ -96,6 +96,6 @@ mod tests {
         let parents = [0i64, 0, 0];
         let mut out = [false; 1];
         reduce_sum_bool_bool_64(&mut out, &from, &parents);
-        assert_eq!(out[0], true);
+        assert!(out[0]);
     }
 }

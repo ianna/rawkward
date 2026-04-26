@@ -24,13 +24,9 @@ pub fn unique_offsets<T>(
     let mut j = 0usize;
     for i in 0..length {
         tooffsets[j] = T::try_from(fromoffsets[i]).expect("fits");
-        for _k in j..startslength.saturating_sub(1) {
-            if starts[j] == starts[j + 1] {
-                tooffsets[j + 1] = T::try_from(fromoffsets[i]).expect("fits");
-                j += 1;
-            } else {
-                break;
-            }
+        while j + 1 < startslength && starts[j] == starts[j + 1] {
+            tooffsets[j + 1] = T::try_from(fromoffsets[i]).expect("fits");
+            j += 1;
         }
         j += 1;
     }

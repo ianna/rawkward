@@ -29,10 +29,8 @@ pub fn numpy_array_unique_strings_uint8(
         let cur_len = offsets[i + 1] - offsets[i];
         let mut differ = cur_len != slen;
         if !differ {
-            let mut k = 0usize;
-            for j in offsets[i] as usize..offsets[i + 1] as usize {
+            for (k, j) in (offsets[i] as usize..offsets[i + 1] as usize).enumerate() {
                 if toptr[start + k] != toptr[j] { differ = true; break; }
-                k += 1;
             }
         }
         if differ {

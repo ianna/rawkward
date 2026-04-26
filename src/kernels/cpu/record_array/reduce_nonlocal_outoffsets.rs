@@ -18,8 +18,8 @@ pub fn record_array_reduce_nonlocal_outoffsets_64(
     parents: &[i64],
     outlength: usize,
 ) {
-    assert!(outoffsets.len() >= outlength + 1);
-    assert!(outcarry.len()  >= outlength + 1);
+    assert!(outoffsets.len() > outlength);
+    assert!(outcarry.len() > outlength);
 
     let lenparents = parents.len() as i64;
 
