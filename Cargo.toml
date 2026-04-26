@@ -12,9 +12,21 @@ name = "rawkward"
 crate-type = ["cdylib", "rlib"]
 
 [features]
+# Default: build the Python extension. `python` uses pyo3/extension-module,
+# which makes the linker use dynamic-lookup on macOS and weak symbols on
+# Linux — no libpython required at link time. This is what `maturin develop`
+# does, and it works the same on macOS, Linux CI, and Windows.
 default = ["python"]
-python = ["pyo3/extension-module"]
-bin_testing = ["pyo3/auto-initialize"]
+python = ["dep:pyo3", "pyo3/extension-module"]
+
+# Opt-in for Rust binaries / tests that *embed* a Python interpreter
+# (e.g. `cargo test --features auto-initialize`). Requires libpython on
+# the linker path — set PYO3_PYTHON to the interpreter you want to link
+# against. Do NOT combine with the `python` feature in the same build.
+auto-initialize = ["dep:pyo3", "pyo3/auto-initialize"]
+
+# Async + networking. Off by default; turn on with `--features remote`.
+remote = ["dep:reqwest", "dep:tokio"]
 
 [dependencies]
 pyo3 = { version = "0.23", optional = true, features = ["abi3-py39"] }
@@ -30,7 +42,7 @@ xxhash-rust = { version = "0.8", features = ["xxh3"] }
 xz2 = "0.1"
 zstd = { version = "0.13", features = ["zstdmt"] }
 
-# Async + networking (optional — enable with the `remote` feature)
+# Optional networking deps — enabled by the `remote` feature.
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "http2"], optional = true }
 tokio = { version = "1.44", features = ["macros", "rt", "rt-multi-thread", "sync"], optional = true }
 
