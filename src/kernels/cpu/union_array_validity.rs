@@ -19,7 +19,7 @@ use crate::kernels::cpu::error::KernelError;
 /// # Parameters
 ///
 /// * `tags`        – Discriminant array identifying which content each element
-///                   belongs to.
+///   belongs to.
 /// * `index`       – Per-content position index.
 /// * `lencontents` – Length of each content array; indexed by `tags[i]`.
 ///

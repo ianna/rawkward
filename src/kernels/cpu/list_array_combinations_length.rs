@@ -41,7 +41,7 @@ where
 {
     let length = starts.len();
     assert_eq!(stops.len(), length);
-    assert!(tooffsets.len() >= length + 1);
+    assert!(tooffsets.len() > length);
 
     let mut totallen = 0i64;
     tooffsets[0] = 0;

@@ -42,7 +42,7 @@ where
     assert_eq!(slicestops.len(), sliceouterlen);
     assert_eq!(fromstarts.len(), sliceouterlen);
     assert_eq!(fromstops.len(), sliceouterlen);
-    assert!(tooffsets.len() >= sliceouterlen + 1);
+    assert!(tooffsets.len() > sliceouterlen);
 
     let mut k = 0usize;
     for i in 0..sliceouterlen {

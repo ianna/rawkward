@@ -47,8 +47,8 @@ pub fn list_array_getitem_jagged_shrink_64(
 ) -> usize {
     let length = slicestarts.len();
     assert_eq!(slicestops.len(), length);
-    assert!(tosmalloffsets.len() >= length + 1);
-    assert!(tolargeoffsets.len() >= length + 1);
+    assert!(tosmalloffsets.len() > length);
+    assert!(tolargeoffsets.len() > length);
 
     let mut k = 0usize;
     if length == 0 {

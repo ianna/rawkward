@@ -27,7 +27,7 @@
 /// ```
 pub fn indexed_array_numnull_unique_64(toindex: &mut [i64], lenindex: usize) {
     assert!(
-        toindex.len() >= lenindex + 1,
+        toindex.len() > lenindex,
         "toindex must have at least lenindex+1 slots"
     );
     for i in 0..lenindex {

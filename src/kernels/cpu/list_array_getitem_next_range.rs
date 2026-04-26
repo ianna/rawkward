@@ -27,7 +27,7 @@ where
     <C as TryFrom<i64>>::Error: std::fmt::Debug,
 {
     assert_eq!(fromstarts.len(), fromstops.len());
-    assert!(tooffsets.len() >= fromstarts.len() + 1);
+    assert!(tooffsets.len() > fromstarts.len());
     let posstep = step > 0;
     tooffsets[0] = C::try_from(0i64).expect("0 fits");
     let mut k = 0usize;

@@ -40,7 +40,7 @@ pub fn list_offset_array_reduce_nonlocal_preparenext_64(
     maxcount: i64,
 ) -> i64 {
     let length = parents.len();
-    assert!(offsets.len() >= length + 1);
+    assert!(offsets.len() > length);
     assert!(offsetscopy.len() >= length);
 
     for d in distincts.iter_mut() {

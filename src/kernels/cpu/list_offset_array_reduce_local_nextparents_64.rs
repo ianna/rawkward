@@ -30,7 +30,7 @@ pub fn list_offset_array_reduce_local_nextparents_64<C>(
 ) where
     C: Copy + Into<i64>,
 {
-    assert!(offsets.len() >= length + 1);
+    assert!(offsets.len() > length);
     let initial_offset: i64 = offsets[0].into();
     for i in 0..length {
         let start = offsets[i].into() - initial_offset;

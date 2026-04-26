@@ -57,7 +57,7 @@ pub fn indexed_array_unique_next_index_and_offsets_64(
     fromnulls: &[i64],
     startslength: usize,
 ) {
-    assert!(tooffsets.len() >= startslength + 1);
+    assert!(tooffsets.len() > startslength);
 
     let mut k = 0usize;
     let mut ll = 0i64;

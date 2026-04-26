@@ -36,7 +36,7 @@ pub fn list_offset_array_rpad_and_clip_axis1<C>(
 ) where
     C: Copy + Into<i64>,
 {
-    assert!(fromoffsets.len() >= length + 1);
+    assert!(fromoffsets.len() > length);
     assert!(toindex.len() >= length * target);
 
     for i in 0..length {

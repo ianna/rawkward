@@ -15,7 +15,7 @@ use std::ops::AddAssign;
 /// # Type parameters
 ///
 /// * `OUT` – Output accumulator type.  Must be zero-constructable (`Default`)
-///           and support `+=`.
+///   and support `+=`.
 /// * `IN`  – Input element type.  Must be convertible into `OUT` via `Into`.
 ///
 /// # Panics

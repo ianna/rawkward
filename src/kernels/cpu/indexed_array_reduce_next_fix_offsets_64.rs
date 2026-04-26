@@ -41,7 +41,7 @@ pub fn indexed_array_reduce_next_fix_offsets_64(
 ) {
     let startslength = starts.len();
     assert!(
-        outoffsets.len() >= startslength + 1,
+        outoffsets.len() > startslength,
         "outoffsets must hold startslength+1 elements"
     );
     outoffsets[..startslength].copy_from_slice(starts);

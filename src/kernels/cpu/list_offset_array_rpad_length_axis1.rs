@@ -22,7 +22,7 @@ where
     C: TryFrom<i64> + Copy + Into<i64>,
     <C as TryFrom<i64>>::Error: std::fmt::Debug,
 {
-    assert!(tooffsets.len() >= fromlength + 1);
+    assert!(tooffsets.len() > fromlength);
     tooffsets[0] = C::try_from(0i64).expect("0 fits");
     let mut length = 0i64;
     for i in 0..fromlength {

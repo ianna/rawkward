@@ -32,7 +32,7 @@ pub fn regular_array_getitem_jagged_expand_64(
     regularsize: usize,
     regularlength: usize,
 ) {
-    assert!(singleoffsets.len() >= regularsize + 1);
+    assert!(singleoffsets.len() > regularsize);
     assert!(multistarts.len() >= regularlength * regularsize);
     assert!(multistops.len() >= regularlength * regularsize);
 

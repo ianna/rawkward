@@ -21,7 +21,7 @@ pub fn union_array_flatten_combine<C, I>(
     I: Copy + Into<i64>,
 {
     assert_eq!(fromtags.len(), fromindex.len());
-    assert!(tooffsets.len() >= fromtags.len() + 1);
+    assert!(tooffsets.len() > fromtags.len());
     tooffsets[0] = 0;
     let mut k = 0usize;
     for (i, (&t, &idx)) in fromtags.iter().zip(fromindex.iter()).enumerate() {

@@ -21,7 +21,7 @@ where
 {
     let length = fromstarts.len();
     assert_eq!(fromstops.len(), length);
-    assert!(tooffsets.len() >= length + 1);
+    assert!(tooffsets.len() > length);
     tooffsets[0] = 0;
     for i in 0..length {
         let start: i64 = fromstarts[i].into();

@@ -31,8 +31,8 @@ pub fn list_offset_array_reduce_nonlocal_maxcount_offsetscopy_64(
     offsets: &[i64],
     length: usize,
 ) -> i64 {
-    assert!(offsets.len() >= length + 1);
-    assert!(offsetscopy.len() >= length + 1);
+    assert!(offsets.len() > length);
+    assert!(offsetscopy.len() > length);
 
     let mut maxcount = 0i64;
     offsetscopy[0] = offsets[0];

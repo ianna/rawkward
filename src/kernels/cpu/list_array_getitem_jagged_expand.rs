@@ -32,7 +32,7 @@ where
 {
     let length = fromstarts.len();
     assert_eq!(fromstops.len(), length);
-    assert!(singleoffsets.len() >= jaggedsize + 1);
+    assert!(singleoffsets.len() > jaggedsize);
 
     for i in 0..length {
         let start: i64 = fromstarts[i].into();

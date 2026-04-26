@@ -15,7 +15,7 @@ use std::ops::MulAssign;
 /// # Type parameters
 ///
 /// * `OUT` – Accumulator type; must support `MulAssign` and be constructable
-///           as the value `1`.
+///   as the value `1`.
 /// * `IN`  – Input type; must be convertible into `OUT`.
 ///
 /// # Panics

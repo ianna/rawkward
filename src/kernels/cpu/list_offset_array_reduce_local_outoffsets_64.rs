@@ -34,7 +34,7 @@ pub fn list_offset_array_reduce_local_outoffsets_64(
     parents: &[i64],
     outlength: usize,
 ) {
-    assert!(outoffsets.len() >= outlength + 1);
+    assert!(outoffsets.len() > outlength);
     let lenparents = parents.len() as i64;
     let mut k = 0i64;
     let mut last = -1i64;

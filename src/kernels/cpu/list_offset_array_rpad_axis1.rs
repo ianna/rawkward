@@ -36,7 +36,7 @@ pub fn list_offset_array_rpad_axis1<C>(
 ) where
     C: Copy + Into<i64>,
 {
-    assert!(fromoffsets.len() >= fromlength + 1);
+    assert!(fromoffsets.len() > fromlength);
 
     let mut count = 0usize;
     for i in 0..fromlength {

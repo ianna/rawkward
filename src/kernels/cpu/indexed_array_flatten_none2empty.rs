@@ -25,7 +25,7 @@ where
 {
     let outindexlength = outindex.len();
     let offsetslength = offsets.len() as i64;
-    assert!(outoffsets.len() >= outindexlength + 1);
+    assert!(outoffsets.len() > outindexlength);
     outoffsets[0] = offsets[0];
     for i in 0..outindexlength {
         let idx: i64 = outindex[i].into();

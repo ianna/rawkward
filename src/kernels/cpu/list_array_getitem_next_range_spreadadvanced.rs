@@ -34,7 +34,7 @@ pub fn list_array_getitem_next_range_spreadadvanced<C>(
 ) where
     C: Copy + Into<i64>,
 {
-    assert!(fromoffsets.len() >= lenstarts + 1);
+    assert!(fromoffsets.len() > lenstarts);
     assert_eq!(fromadvanced.len(), lenstarts);
 
     for i in 0..lenstarts {
