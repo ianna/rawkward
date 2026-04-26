@@ -1,144 +1,91 @@
 // Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
-//! IndexedArray fill kernels
+//! Copy `fromindex` values (offset by `base`) into a slice of `toindex`.
 //!
-//! Port of Awkward's `awkward_IndexedArray_fill` kernels.
+//! Corresponds to `src/cpu-kernels/awkward_IndexedArray_fill.cpp`.
 //!
-//! Semantics:
-//! - Negative values map to -1 (null sentinel)
-//! - Non-negative values are shifted by `base`
-//! - Written into output with an offset
+//! For each position `i < length`:
+//! * If `fromindex[i] < 0`, write `-1`.
+//! * Otherwise write `fromindex[i] + base`.
 
-/// Fill from i32 → i64
-pub fn indexed_array_fill_to64_from32(
-    toindex: &mut [i64],
-    toindex_offset: usize,
-    fromindex: &[i32],
+/// Generic implementation.
+pub fn indexed_array_fill<FROM, TO>(
+    toindex: &mut [TO],
+    toindexoffset: usize,
+    fromindex: &[FROM],
     base: i64,
-) {
-    let len = fromindex.len();
-    assert!(toindex_offset + len <= toindex.len());
-
-    for i in 0..len {
-        let fromval = fromindex[i];
-
-        toindex[toindex_offset + i] = if fromval < 0 {
-            -1
+) where
+    FROM: Copy + Into<i64>,
+    TO: TryFrom<i64> + Copy,
+    <TO as TryFrom<i64>>::Error: std::fmt::Debug,
+{
+    let minus_one = TO::try_from(-1i64).expect("-1 fits");
+    for (i, &v) in fromindex.iter().enumerate() {
+        let fv: i64 = v.into();
+        toindex[toindexoffset + i] = if fv < 0 {
+            minus_one
         } else {
-            fromval as i64 + base
+            TO::try_from(fv + base).expect("value fits")
         };
     }
 }
 
-/// Fill from i64 → i64
-pub fn indexed_array_fill_to64_from64(
+/// `i32 → i64` wrapper (mirrors `awkward_IndexedArray_fill_to64_from32`).
+pub fn indexed_array_fill_to64_from32(
     toindex: &mut [i64],
-    toindex_offset: usize,
-    fromindex: &[i64],
-    base: i64,
-) {
-    let len = fromindex.len();
-    assert!(toindex_offset + len <= toindex.len());
-
-    for i in 0..len {
-        let fromval = fromindex[i];
-
-        toindex[toindex_offset + i] = if fromval < 0 { -1 } else { fromval + base };
-    }
-}
-
-/// Fill from u32 → i64
-///
-/// Note: unsigned values cannot be negative,
-/// so no null sentinel check is needed.
-pub fn indexed_array_fill_to64_from_u32(
-    toindex: &mut [i64],
-    toindex_offset: usize,
-    fromindex: &[u32],
-    base: i64,
-) {
-    let len = fromindex.len();
-    assert!(toindex_offset + len <= toindex.len());
-
-    for i in 0..len {
-        let fromval = fromindex[i];
-        toindex[toindex_offset + i] = fromval as i64 + base;
-    }
-}
-
-//
-// Optional: unsafe fast versions (closer to C++)
-//
-
-/// Unsafe optimized version (i32 → i64)
-pub fn indexed_array_fill_to64_from32_unchecked(
-    toindex: &mut [i64],
-    toindex_offset: usize,
+    toindexoffset: usize,
     fromindex: &[i32],
     base: i64,
 ) {
-    let len = fromindex.len();
-    assert!(toindex_offset + len <= toindex.len());
-
-    unsafe {
-        for i in 0..len {
-            let fromval = *fromindex.get_unchecked(i);
-
-            *toindex.get_unchecked_mut(toindex_offset + i) = if fromval < 0 {
-                -1
-            } else {
-                fromval as i64 + base
-            };
-        }
-    }
+    indexed_array_fill(toindex, toindexoffset, fromindex, base);
 }
 
-//
-// Tests
-//
+/// `u32 → i64` wrapper (mirrors `awkward_IndexedArray_fill_to64_fromU32`).
+pub fn indexed_array_fill_to64_fromu32(
+    toindex: &mut [i64],
+    toindexoffset: usize,
+    fromindex: &[u32],
+    base: i64,
+) {
+    indexed_array_fill(toindex, toindexoffset, fromindex, base);
+}
+
+/// `i64 → i64` wrapper (mirrors `awkward_IndexedArray_fill_to64_from64`).
+pub fn indexed_array_fill_to64_from64(
+    toindex: &mut [i64],
+    toindexoffset: usize,
+    fromindex: &[i64],
+    base: i64,
+) {
+    indexed_array_fill(toindex, toindexoffset, fromindex, base);
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_fill_i32_basic() {
-        let from = vec![1, 2, -1, 4];
-        let mut to = vec![0; 4];
-
-        indexed_array_fill_to64_from32(&mut to, 0, &from, 10);
-
-        assert_eq!(to, vec![11, 12, -1, 14]);
+    fn basic_with_base() {
+        let from = [0i32, 1, 2];
+        let mut to = [0i64; 5];
+        indexed_array_fill_to64_from32(&mut to, 1, &from, 10);
+        assert_eq!(to, [0, 10, 11, 12, 0]);
     }
 
     #[test]
-    fn test_fill_i64_basic() {
-        let from = vec![1_i64, -1, 3];
-        let mut to = vec![0; 3];
-
+    fn negatives_become_minus_one() {
+        let from = [-1i64, 2, -1];
+        let mut to = [0i64; 3];
         indexed_array_fill_to64_from64(&mut to, 0, &from, 5);
-
-        assert_eq!(to, vec![6, -1, 8]);
+        assert_eq!(to, [-1, 7, -1]);
     }
 
     #[test]
-    fn test_fill_u32_basic() {
-        let from = vec![1_u32, 2, 3];
-        let mut to = vec![0; 3];
-
-        indexed_array_fill_to64_from_u32(&mut to, 0, &from, 7);
-
-        assert_eq!(to, vec![8, 9, 10]);
-    }
-
-    #[test]
-    fn test_with_offset() {
-        let from = vec![1, 2];
-        let mut to = vec![0; 5];
-
-        indexed_array_fill_to64_from32(&mut to, 2, &from, 10);
-
-        assert_eq!(to, vec![0, 0, 11, 12, 0]);
+    fn u32_input() {
+        let from = [0u32, 3];
+        let mut to = [0i64; 2];
+        indexed_array_fill_to64_fromu32(&mut to, 0, &from, 100);
+        assert_eq!(to, [100, 103]);
     }
 }

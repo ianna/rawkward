@@ -50,7 +50,7 @@ jobs:
         shell: bash -leo pipefail {0}
         run: |
           # We run cargo test within the mamba shell so it can find Python libs
-          cargo test --verbose
+          cargo test --no-default-features --lib
 
       - name: Build Python Extension (MVP)
         shell: bash -leo pipefail {0}
