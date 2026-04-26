@@ -29,7 +29,7 @@ auto-initialize = ["dep:pyo3", "pyo3/auto-initialize"]
 remote = ["dep:reqwest", "dep:tokio"]
 
 [dependencies]
-pyo3 = { version = "0.23", optional = true, features = ["abi3-py39"] }
+pyo3 = { version = "0.23", optional = true, features = ["abi3-py39", "auto-initialize"] }
 arrow = "53"
 arrow-buffer = "53"
 rayon = "1.10"
