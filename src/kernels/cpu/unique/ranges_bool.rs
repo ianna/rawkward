@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Ianna Osborne 
+// Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
 //! Deduplicate consecutive equal booleans within each group, in-place.
@@ -19,8 +19,10 @@ pub fn unique_ranges_bool(
     for i in 0..offsetslength.saturating_sub(1) {
         tooffsets[i] = m as i64;
         let start = fromoffsets[i] as usize;
-        let stop  = fromoffsets[i + 1] as usize;
-        if start >= stop { continue; }
+        let stop = fromoffsets[i + 1] as usize;
+        if start >= stop {
+            continue;
+        }
         toptr[m] = toptr[start];
         m += 1;
         for k in start..stop {
@@ -41,9 +43,9 @@ mod tests {
 
     #[test]
     fn basic() {
-        let mut data    = [true, true, false, true];
+        let mut data = [true, true, false, true];
         let fromoffsets = [0i64, 4];
-        let mut outoff  = [0i64; 2];
+        let mut outoff = [0i64; 2];
         unique_ranges_bool(&mut data, &fromoffsets, 2, &mut outoff);
         // true, false, true → 3 unique (consecutive differ)
         assert_eq!(outoff, [0, 3]);
@@ -51,9 +53,9 @@ mod tests {
 
     #[test]
     fn all_same() {
-        let mut data    = [false, false, false];
+        let mut data = [false, false, false];
         let fromoffsets = [0i64, 3];
-        let mut outoff  = [0i64; 2];
+        let mut outoff = [0i64; 2];
         unique_ranges_bool(&mut data, &fromoffsets, 2, &mut outoff);
         assert_eq!(outoff, [0, 1]);
     }

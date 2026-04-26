@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Ianna Osborne 
+// Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
 //! Sort each group of a flat array in-place.
@@ -28,34 +28,50 @@ pub fn sort<T>(
 
     for i in 0..offsetslength.saturating_sub(1) {
         let start = offsets[i] as usize;
-        let stop  = offsets[i + 1] as usize;
-        let seg   = &mut index[start..stop];
+        let stop = offsets[i + 1] as usize;
+        let seg = &mut index[start..stop];
 
         if stable {
             if ascending {
                 seg.sort_by(|&a, &b| {
-                    if fromptr[a].argsort_less(&fromptr[b]) { std::cmp::Ordering::Less }
-                    else if fromptr[b].argsort_less(&fromptr[a]) { std::cmp::Ordering::Greater }
-                    else { std::cmp::Ordering::Equal }
+                    if fromptr[a].argsort_less(&fromptr[b]) {
+                        std::cmp::Ordering::Less
+                    } else if fromptr[b].argsort_less(&fromptr[a]) {
+                        std::cmp::Ordering::Greater
+                    } else {
+                        std::cmp::Ordering::Equal
+                    }
                 });
             } else {
                 seg.sort_by(|&a, &b| {
-                    if fromptr[a].argsort_greater(&fromptr[b]) { std::cmp::Ordering::Less }
-                    else if fromptr[b].argsort_greater(&fromptr[a]) { std::cmp::Ordering::Greater }
-                    else { std::cmp::Ordering::Equal }
+                    if fromptr[a].argsort_greater(&fromptr[b]) {
+                        std::cmp::Ordering::Less
+                    } else if fromptr[b].argsort_greater(&fromptr[a]) {
+                        std::cmp::Ordering::Greater
+                    } else {
+                        std::cmp::Ordering::Equal
+                    }
                 });
             }
         } else if ascending {
             seg.sort_unstable_by(|&a, &b| {
-                if fromptr[a].argsort_less(&fromptr[b]) { std::cmp::Ordering::Less }
-                else if fromptr[b].argsort_less(&fromptr[a]) { std::cmp::Ordering::Greater }
-                else { std::cmp::Ordering::Equal }
+                if fromptr[a].argsort_less(&fromptr[b]) {
+                    std::cmp::Ordering::Less
+                } else if fromptr[b].argsort_less(&fromptr[a]) {
+                    std::cmp::Ordering::Greater
+                } else {
+                    std::cmp::Ordering::Equal
+                }
             });
         } else {
             seg.sort_unstable_by(|&a, &b| {
-                if fromptr[a].argsort_greater(&fromptr[b]) { std::cmp::Ordering::Less }
-                else if fromptr[b].argsort_greater(&fromptr[a]) { std::cmp::Ordering::Greater }
-                else { std::cmp::Ordering::Equal }
+                if fromptr[a].argsort_greater(&fromptr[b]) {
+                    std::cmp::Ordering::Less
+                } else if fromptr[b].argsort_greater(&fromptr[a]) {
+                    std::cmp::Ordering::Greater
+                } else {
+                    std::cmp::Ordering::Equal
+                }
             });
         }
     }
@@ -68,22 +84,38 @@ pub fn sort<T>(
 
 macro_rules! impl_sort_typed {
     ($fn_name:ident, $t:ty) => {
-        pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], length: usize,
-                        offsets: &[i64], offsetslength: usize, parentslength: usize,
-                        ascending: bool, stable: bool) {
-            sort(toptr, fromptr, length, offsets, offsetslength, parentslength, ascending, stable)
+        pub fn $fn_name(
+            toptr: &mut [$t],
+            fromptr: &[$t],
+            length: usize,
+            offsets: &[i64],
+            offsetslength: usize,
+            parentslength: usize,
+            ascending: bool,
+            stable: bool,
+        ) {
+            sort(
+                toptr,
+                fromptr,
+                length,
+                offsets,
+                offsetslength,
+                parentslength,
+                ascending,
+                stable,
+            )
         }
     };
 }
-impl_sort_typed!(sort_bool,    bool);
-impl_sort_typed!(sort_int8,    i8);
-impl_sort_typed!(sort_uint8,   u8);
-impl_sort_typed!(sort_int16,   i16);
-impl_sort_typed!(sort_uint16,  u16);
-impl_sort_typed!(sort_int32,   i32);
-impl_sort_typed!(sort_uint32,  u32);
-impl_sort_typed!(sort_int64,   i64);
-impl_sort_typed!(sort_uint64,  u64);
+impl_sort_typed!(sort_bool, bool);
+impl_sort_typed!(sort_int8, i8);
+impl_sort_typed!(sort_uint8, u8);
+impl_sort_typed!(sort_int16, i16);
+impl_sort_typed!(sort_uint16, u16);
+impl_sort_typed!(sort_int32, i32);
+impl_sort_typed!(sort_uint32, u32);
+impl_sort_typed!(sort_int64, i64);
+impl_sort_typed!(sort_uint64, u64);
 impl_sort_typed!(sort_float32, f32);
 impl_sort_typed!(sort_float64, f64);
 
@@ -93,7 +125,7 @@ mod tests {
 
     #[test]
     fn ascending() {
-        let from    = [3i32, 1, 2, 5, 4];
+        let from = [3i32, 1, 2, 5, 4];
         let offsets = [0i64, 3, 5];
         let mut out = [0i32; 5];
         sort_int32(&mut out, &from, 5, &offsets, 3, 5, true, true);
@@ -102,7 +134,7 @@ mod tests {
 
     #[test]
     fn descending() {
-        let from    = [1i32, 3, 2];
+        let from = [1i32, 3, 2];
         let offsets = [0i64, 3];
         let mut out = [0i32; 3];
         sort_int32(&mut out, &from, 3, &offsets, 2, 3, false, true);
@@ -111,7 +143,7 @@ mod tests {
 
     #[test]
     fn parentslength_limits_output() {
-        let from    = [3i32, 1, 2];
+        let from = [3i32, 1, 2];
         let offsets = [0i64, 3];
         let mut out = [0i32; 2];
         sort_int32(&mut out, &from, 3, &offsets, 2, 2, true, true);

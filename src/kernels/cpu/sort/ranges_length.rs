@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Ianna Osborne 
+// Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
 //! Count the number of group-boundary transitions in a parents array.

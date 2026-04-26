@@ -1,9 +1,9 @@
+// Copyright (c) 2026 Ianna Osborne
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Convert a bit-packed mask to a byte mask.
 //!
 //! Corresponds to `src/cpu-kernels/awkward_BitMaskedArray_to_ByteMaskedArray.cpp`.
-
-// Copyright (c) 2026 Ianna Osborne
-// SPDX-License-Identifier: BSD-3-Clause
 
 /// Convert a bit-packed boolean mask (`frombitmask`) into a flat byte mask
 /// (`tobytemask`).

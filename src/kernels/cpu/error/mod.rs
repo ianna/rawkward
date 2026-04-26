@@ -1,12 +1,12 @@
+// Copyright (c) 2026 Ianna Osborne
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Error type used by every kernel in this crate.
 //!
 //! The original C++ kernels return an opaque `ERROR` value produced by either
 //! `success()` or `failure(message, id, …)`.  Here we replace that with a
 //! typed `Result<(), KernelError>`, giving callers structured error
 //! information without any heap allocation on the happy path.
-
-// Copyright (c) 2026 Ianna Osborne
-// SPDX-License-Identifier: BSD-3-Clause
 
 use std::fmt;
 

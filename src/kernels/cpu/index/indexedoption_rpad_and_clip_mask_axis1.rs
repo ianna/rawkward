@@ -1,10 +1,10 @@
+// Copyright (c) 2026 Ianna Osborne
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Build the output index for rpad-and-clip on axis=1 of an IndexedOptionArray.
 //!
 //! Corresponds to
 //! `src/cpu-kernels/awkward_IndexedOptionArray_rpad_and_clip_mask_axis1.cpp`.
-
-// Copyright (c) 2026 Ianna Osborne
-// SPDX-License-Identifier: BSD-3-Clause
 
 /// For each position `i`:
 /// * `frommask[i] != 0` → `toindex[i] = -1` (masked/null).

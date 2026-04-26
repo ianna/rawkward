@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Ianna Osborne 
+// Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
 //! Project the non-null entries of a MaskedArray through a jagged getitem.
@@ -26,20 +26,38 @@ where
     for i in 0..length {
         if index[i].into() >= 0 {
             starts_out[k] = starts_in[i];
-            stops_out [k] = stops_in[i];
+            stops_out[k] = stops_in[i];
             k += 1;
         }
     }
     k
 }
 
-pub fn masked_array32_getitem_next_jagged_project(index: &[i32], starts_in: &[i64], stops_in: &[i64], starts_out: &mut [i64], stops_out: &mut [i64]) -> usize {
+pub fn masked_array32_getitem_next_jagged_project(
+    index: &[i32],
+    starts_in: &[i64],
+    stops_in: &[i64],
+    starts_out: &mut [i64],
+    stops_out: &mut [i64],
+) -> usize {
     masked_array_getitem_next_jagged_project(index, starts_in, stops_in, starts_out, stops_out)
 }
-pub fn masked_array_u32_getitem_next_jagged_project(index: &[u32], starts_in: &[i64], stops_in: &[i64], starts_out: &mut [i64], stops_out: &mut [i64]) -> usize {
+pub fn masked_array_u32_getitem_next_jagged_project(
+    index: &[u32],
+    starts_in: &[i64],
+    stops_in: &[i64],
+    starts_out: &mut [i64],
+    stops_out: &mut [i64],
+) -> usize {
     masked_array_getitem_next_jagged_project(index, starts_in, stops_in, starts_out, stops_out)
 }
-pub fn masked_array64_getitem_next_jagged_project(index: &[i64], starts_in: &[i64], stops_in: &[i64], starts_out: &mut [i64], stops_out: &mut [i64]) -> usize {
+pub fn masked_array64_getitem_next_jagged_project(
+    index: &[i64],
+    starts_in: &[i64],
+    stops_in: &[i64],
+    starts_out: &mut [i64],
+    stops_out: &mut [i64],
+) -> usize {
     masked_array_getitem_next_jagged_project(index, starts_in, stops_in, starts_out, stops_out)
 }
 
@@ -49,12 +67,14 @@ mod tests {
 
     #[test]
     fn basic() {
-        let index     = [0i64, -1, 2, -1];
+        let index = [0i64, -1, 2, -1];
         let starts_in = [0i64, 10, 20, 30];
-        let stops_in  = [5i64, 15, 25, 35];
+        let stops_in = [5i64, 15, 25, 35];
         let mut s_out = [0i64; 4];
         let mut p_out = [0i64; 4];
-        let n = masked_array64_getitem_next_jagged_project(&index, &starts_in, &stops_in, &mut s_out, &mut p_out);
+        let n = masked_array64_getitem_next_jagged_project(
+            &index, &starts_in, &stops_in, &mut s_out, &mut p_out,
+        );
         assert_eq!(n, 2);
         assert_eq!(&s_out[..n], &[0, 20]);
         assert_eq!(&p_out[..n], &[5, 25]);
@@ -62,11 +82,16 @@ mod tests {
 
     #[test]
     fn all_null() {
-        let index     = [-1i64, -1];
+        let index = [-1i64, -1];
         let starts_in = [0i64, 5];
-        let stops_in  = [5i64, 10];
+        let stops_in = [5i64, 10];
         let mut s = [0i64; 2];
         let mut p = [0i64; 2];
-        assert_eq!(masked_array64_getitem_next_jagged_project(&index, &starts_in, &stops_in, &mut s, &mut p), 0);
+        assert_eq!(
+            masked_array64_getitem_next_jagged_project(
+                &index, &starts_in, &stops_in, &mut s, &mut p
+            ),
+            0
+        );
     }
 }

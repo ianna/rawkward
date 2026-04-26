@@ -1,9 +1,9 @@
+// Copyright (c) 2026 Ianna Osborne
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Expand a single-offset jagged slice across every list in a ListArray.
 //!
 //! Corresponds to `src/cpu-kernels/awkward_ListArray_getitem_jagged_expand.cpp`.
-
-// Copyright (c) 2026 Ianna Osborne
-// SPDX-License-Identifier: BSD-3-Clause
 
 use crate::kernels::cpu::error::KernelError;
 

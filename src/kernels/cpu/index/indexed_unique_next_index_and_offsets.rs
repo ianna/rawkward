@@ -1,10 +1,10 @@
+// Copyright (c) 2026 Ianna Osborne
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Build the output index and offsets for the next unique-values step of an IndexedArray.
 //!
 //! Corresponds to
 //! `src/cpu-kernels/awkward_IndexedArray_unique_next_index_and_offsets_64.cpp`.
-
-// Copyright (c) 2026 Ianna Osborne
-// SPDX-License-Identifier: BSD-3-Clause
 
 /// Fill `toindex` and `tooffsets` for the next unique-values reduction step.
 ///

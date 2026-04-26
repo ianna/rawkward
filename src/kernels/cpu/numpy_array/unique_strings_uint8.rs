@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Ianna Osborne 
+// Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
 //! Deduplicate consecutive equal strings in a flat byte array.
@@ -30,7 +30,10 @@ pub fn numpy_array_unique_strings_uint8(
         let mut differ = cur_len != slen;
         if !differ {
             for (k, j) in (offsets[i] as usize..offsets[i + 1] as usize).enumerate() {
-                if toptr[start + k] != toptr[j] { differ = true; break; }
+                if toptr[start + k] != toptr[j] {
+                    differ = true;
+                    break;
+                }
             }
         }
         if differ {
@@ -53,8 +56,8 @@ mod tests {
 
     #[test]
     fn removes_duplicates() {
-        let mut data   = b"aabbcc".to_vec();
-        let offsets    = [0i64, 2, 4, 6];
+        let mut data = b"aabbcc".to_vec();
+        let offsets = [0i64, 2, 4, 6];
         let mut outoff = [0i64; 4];
         let n = numpy_array_unique_strings_uint8(&mut data, &offsets, 4, &mut outoff);
         // "aa","bb","cc" are all distinct → 3 unique
@@ -63,8 +66,8 @@ mod tests {
 
     #[test]
     fn keeps_first_of_run() {
-        let mut data   = b"aaaa".to_vec();
-        let offsets    = [0i64, 2, 4];
+        let mut data = b"aaaa".to_vec();
+        let offsets = [0i64, 2, 4];
         let mut outoff = [0i64; 3];
         let n = numpy_array_unique_strings_uint8(&mut data, &offsets, 3, &mut outoff);
         assert_eq!(n, 2); // only 1 unique string

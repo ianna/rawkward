@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Ianna Osborne 
+// Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
 //! Build output offsets and carry for a non-local reduction over a RecordArray.
@@ -24,7 +24,9 @@ pub fn record_array_reduce_nonlocal_outoffsets_64(
     let lenparents = parents.len() as i64;
 
     outoffsets[0] = 0;
-    for v in outcarry.iter_mut() { *v = -1; }
+    for v in outcarry.iter_mut() {
+        *v = -1;
+    }
 
     let mut i = 0usize;
     let mut j_stop = 1usize;
@@ -70,7 +72,7 @@ mod tests {
         // parents=[0,0,1,1], outlength=2
         let parents = [0i64, 0, 1, 1];
         let mut offsets = [0i64; 3];
-        let mut carry   = [0i64; 3];
+        let mut carry = [0i64; 3];
         record_array_reduce_nonlocal_outoffsets_64(&mut offsets, &mut carry, &parents, 2);
         assert_eq!(offsets, [0, 2, 4]);
         assert_eq!(&carry[..2], &[0, 1]);
@@ -81,7 +83,7 @@ mod tests {
         // parents=[0,0], outlength=3 → parent 1 and 2 are missing
         let parents = [0i64, 0];
         let mut offsets = [0i64; 4];
-        let mut carry   = [0i64; 4];
+        let mut carry = [0i64; 4];
         record_array_reduce_nonlocal_outoffsets_64(&mut offsets, &mut carry, &parents, 3);
         assert_eq!(offsets[1], 2);
         // Missing parents get carry ≥ 1

@@ -10,7 +10,7 @@
     clippy::too_many_arguments,
     clippy::needless_range_loop,
     clippy::module_inception,
-    clippy::doc_overindented_list_items,
+    clippy::doc_overindented_list_items
 )]
 
 //! # cpu-kernels

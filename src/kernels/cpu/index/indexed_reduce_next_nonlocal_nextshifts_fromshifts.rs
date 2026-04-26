@@ -1,11 +1,11 @@
+// Copyright (c) 2026 Ianna Osborne
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Build the next-shifts array (with an incoming shifts array) for a
 //! non-local reduction over an IndexedArray.
 //!
 //! Corresponds to
 //! `src/cpu-kernels/awkward_IndexedArray_reduce_next_nonlocal_nextshifts_fromshifts_64.cpp`.
-
-// Copyright (c) 2026 Ianna Osborne
-// SPDX-License-Identifier: BSD-3-Clause
 
 /// Like [`indexed_array_reduce_next_nonlocal_nextshifts_64`] but adds the
 /// incoming `shifts[i]` for each non-null entry:

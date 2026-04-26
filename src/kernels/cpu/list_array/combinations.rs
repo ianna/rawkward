@@ -1,9 +1,9 @@
+// Copyright (c) 2026 Ianna Osborne
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Generate all n-combinations of indices for every list in a ListArray.
 //!
 //! Corresponds to `src/cpu-kernels/awkward_ListArray_combinations.cpp`.
-
-// Copyright (c) 2026 Ianna Osborne
-// SPDX-License-Identifier: BSD-3-Clause
 
 use crate::kernels::cpu::kernel_utils::list_array_combinations_step_64;
 

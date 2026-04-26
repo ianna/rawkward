@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Ianna Osborne 
+// Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
 //! Compute the maximum codepoint count across all UTF-8 sublists.
@@ -40,13 +40,25 @@ where
     maxcodepoints
 }
 
-pub fn numpy_array_prepare_utf8_to_utf32_padded_int32(fromptr: &[u8], fromoffsets: &[i32], offsetslength: usize) -> i64 {
+pub fn numpy_array_prepare_utf8_to_utf32_padded_int32(
+    fromptr: &[u8],
+    fromoffsets: &[i32],
+    offsetslength: usize,
+) -> i64 {
     numpy_array_prepare_utf8_to_utf32_padded(fromptr, fromoffsets, offsetslength)
 }
-pub fn numpy_array_prepare_utf8_to_utf32_padded_uint32(fromptr: &[u8], fromoffsets: &[u32], offsetslength: usize) -> i64 {
+pub fn numpy_array_prepare_utf8_to_utf32_padded_uint32(
+    fromptr: &[u8],
+    fromoffsets: &[u32],
+    offsetslength: usize,
+) -> i64 {
     numpy_array_prepare_utf8_to_utf32_padded(fromptr, fromoffsets, offsetslength)
 }
-pub fn numpy_array_prepare_utf8_to_utf32_padded_int64(fromptr: &[u8], fromoffsets: &[i64], offsetslength: usize) -> i64 {
+pub fn numpy_array_prepare_utf8_to_utf32_padded_int64(
+    fromptr: &[u8],
+    fromoffsets: &[i64],
+    offsetslength: usize,
+) -> i64 {
     numpy_array_prepare_utf8_to_utf32_padded(fromptr, fromoffsets, offsetslength)
 }
 
@@ -57,16 +69,22 @@ mod tests {
     #[test]
     fn ascii_strings() {
         // "hi" (2 chars), "hello" (5 chars) → max=5
-        let data    = b"hihello";
+        let data = b"hihello";
         let offsets = [0i64, 2, 7];
-        assert_eq!(numpy_array_prepare_utf8_to_utf32_padded_int64(data, &offsets, 3), 5);
+        assert_eq!(
+            numpy_array_prepare_utf8_to_utf32_padded_int64(data, &offsets, 3),
+            5
+        );
     }
 
     #[test]
     fn multibyte() {
         // 'é' is 2 bytes but 1 codepoint
-        let data    = [0xC3u8, 0xA9, b'a']; // "é", "a"
+        let data = [0xC3u8, 0xA9, b'a']; // "é", "a"
         let offsets = [0i64, 2, 3];
-        assert_eq!(numpy_array_prepare_utf8_to_utf32_padded_int64(&data, &offsets, 3), 1);
+        assert_eq!(
+            numpy_array_prepare_utf8_to_utf32_padded_int64(&data, &offsets, 3),
+            1
+        );
     }
 }

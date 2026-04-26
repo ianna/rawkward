@@ -1,9 +1,9 @@
+// Copyright (c) 2026 Ianna Osborne
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Compute the number of n-combinations per list and the total length.
 //!
 //! Corresponds to `src/cpu-kernels/awkward_ListArray_combinations_length.cpp`.
-
-// Copyright (c) 2026 Ianna Osborne
-// SPDX-License-Identifier: BSD-3-Clause
 
 /// For each list `i` of length `stops[i] - starts[i]`, compute the number of
 /// `n`-combinations (with or without replacement) and write cumulative sums

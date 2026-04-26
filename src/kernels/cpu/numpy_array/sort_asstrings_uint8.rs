@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Ianna Osborne 
+// Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
 //! Sort a flat byte array interpreted as a sequence of strings.
@@ -19,15 +19,20 @@ pub fn numpy_array_sort_asstrings_uint8(
 ) {
     let nstrings = offsetslength.saturating_sub(1);
     // Collect string slices.
-    let mut words: Vec<Vec<u8>> = (0..nstrings).map(|k| {
-        let s = offsets[k] as usize;
-        let e = offsets[k + 1] as usize;
-        fromptr[s..e].to_vec()
-    }).collect();
+    let mut words: Vec<Vec<u8>> = (0..nstrings)
+        .map(|k| {
+            let s = offsets[k] as usize;
+            let e = offsets[k + 1] as usize;
+            fromptr[s..e].to_vec()
+        })
+        .collect();
 
     if stable {
-        if ascending { words.sort(); }
-        else         { words.sort_by(|a, b| b.cmp(a)); }
+        if ascending {
+            words.sort();
+        } else {
+            words.sort_by(|a, b| b.cmp(a));
+        }
     } else if ascending {
         words.sort_unstable();
     } else {
@@ -36,7 +41,10 @@ pub fn numpy_array_sort_asstrings_uint8(
 
     let mut k = 0usize;
     for w in &words {
-        for &c in w { toptr[k] = c; k += 1; }
+        for &c in w {
+            toptr[k] = c;
+            k += 1;
+        }
     }
     outoffsets[0] = 0;
     for (o, w) in words.iter().enumerate() {
@@ -50,10 +58,10 @@ mod tests {
 
     #[test]
     fn ascending() {
-        let from    = b"bananaapple";   // "banana","apple"
+        let from = b"bananaapple"; // "banana","apple"
         let offsets = [0i64, 6, 11];
-        let mut to      = vec![0u8; 11];
-        let mut outoff  = [0i64; 3];
+        let mut to = vec![0u8; 11];
+        let mut outoff = [0i64; 3];
         numpy_array_sort_asstrings_uint8(&mut to, from, &offsets, 3, &mut outoff, true, true);
         let s1 = &to[..outoff[1] as usize];
         let s2 = &to[outoff[1] as usize..outoff[2] as usize];

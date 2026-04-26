@@ -1,9 +1,9 @@
+// Copyright (c) 2026 Ianna Osborne
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Compose two index arrays into a single flattened index.
 //!
 //! Corresponds to `src/cpu-kernels/awkward_IndexedArray_simplify.cpp`.
-
-// Copyright (c) 2026 Ianna Osborne
-// SPDX-License-Identifier: BSD-3-Clause
 
 use crate::kernels::cpu::error::KernelError;
 

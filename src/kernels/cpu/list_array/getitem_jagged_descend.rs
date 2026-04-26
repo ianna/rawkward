@@ -1,9 +1,9 @@
+// Copyright (c) 2026 Ianna Osborne
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Build output offsets for descending into a jagged-slice dimension.
 //!
 //! Corresponds to `src/cpu-kernels/awkward_ListArray_getitem_jagged_descend.cpp`.
-
-// Copyright (c) 2026 Ianna Osborne
-// SPDX-License-Identifier: BSD-3-Clause
 
 use crate::kernels::cpu::error::KernelError;
 

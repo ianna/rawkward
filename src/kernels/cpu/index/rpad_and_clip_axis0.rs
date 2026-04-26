@@ -21,7 +21,9 @@ pub fn index_rpad_and_clip_axis0(toindex: &mut [i64], target: usize, length: usi
     let shorter = target.min(length);
     let dst = &mut toindex[..target];
     let values = (0..shorter as i64).chain(std::iter::repeat(-1));
-    dst.iter_mut().zip(values).for_each(|(slot, val)| *slot = val);
+    dst.iter_mut()
+        .zip(values)
+        .for_each(|(slot, val)| *slot = val);
 }
 
 /// Typed alias (mirrors `awkward_index_rpad_and_clip_axis0_64`).

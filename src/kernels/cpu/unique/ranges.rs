@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Ianna Osborne 
+// Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
 //! Deduplicate consecutive equal elements within each group, in-place.
@@ -24,8 +24,10 @@ pub fn unique_ranges<T>(
     for i in 0..offsetslength.saturating_sub(1) {
         tooffsets[i] = m as i64;
         let start = fromoffsets[i] as usize;
-        let stop  = fromoffsets[i + 1] as usize;
-        if start >= stop { continue; }
+        let stop = fromoffsets[i + 1] as usize;
+        if start >= stop {
+            continue;
+        }
         toptr[m] = toptr[start];
         m += 1;
         for k in start..stop {
@@ -42,19 +44,24 @@ pub fn unique_ranges<T>(
 
 macro_rules! impl_unique_ranges {
     ($fn_name:ident, $t:ty) => {
-        pub fn $fn_name(toptr: &mut [$t], fromoffsets: &[i64], offsetslength: usize, tooffsets: &mut [i64]) {
+        pub fn $fn_name(
+            toptr: &mut [$t],
+            fromoffsets: &[i64],
+            offsetslength: usize,
+            tooffsets: &mut [i64],
+        ) {
             unique_ranges(toptr, fromoffsets, offsetslength, tooffsets);
         }
     };
 }
-impl_unique_ranges!(unique_ranges_int8,    i8);
-impl_unique_ranges!(unique_ranges_uint8,   u8);
-impl_unique_ranges!(unique_ranges_int16,   i16);
-impl_unique_ranges!(unique_ranges_uint16,  u16);
-impl_unique_ranges!(unique_ranges_int32,   i32);
-impl_unique_ranges!(unique_ranges_uint32,  u32);
-impl_unique_ranges!(unique_ranges_int64,   i64);
-impl_unique_ranges!(unique_ranges_uint64,  u64);
+impl_unique_ranges!(unique_ranges_int8, i8);
+impl_unique_ranges!(unique_ranges_uint8, u8);
+impl_unique_ranges!(unique_ranges_int16, i16);
+impl_unique_ranges!(unique_ranges_uint16, u16);
+impl_unique_ranges!(unique_ranges_int32, i32);
+impl_unique_ranges!(unique_ranges_uint32, u32);
+impl_unique_ranges!(unique_ranges_int64, i64);
+impl_unique_ranges!(unique_ranges_uint64, u64);
 impl_unique_ranges!(unique_ranges_float32, f32);
 impl_unique_ranges!(unique_ranges_float64, f64);
 
@@ -64,9 +71,9 @@ mod tests {
 
     #[test]
     fn deduplicate_two_groups() {
-        let mut data    = [1i32, 1, 2, 3, 3, 3];
+        let mut data = [1i32, 1, 2, 3, 3, 3];
         let fromoffsets = [0i64, 3, 6];
-        let mut outoff  = [0i64; 3];
+        let mut outoff = [0i64; 3];
         unique_ranges_int32(&mut data, &fromoffsets, 3, &mut outoff);
         assert_eq!(&data[..outoff[2] as usize], &[1, 2, 3]);
         assert_eq!(outoff, [0, 2, 3]);
@@ -74,18 +81,18 @@ mod tests {
 
     #[test]
     fn all_unique() {
-        let mut data    = [1i64, 2, 3];
+        let mut data = [1i64, 2, 3];
         let fromoffsets = [0i64, 3];
-        let mut outoff  = [0i64; 2];
+        let mut outoff = [0i64; 2];
         unique_ranges_int64(&mut data, &fromoffsets, 2, &mut outoff);
         assert_eq!(outoff, [0, 3]);
     }
 
     #[test]
     fn all_same() {
-        let mut data    = [5i32, 5, 5];
+        let mut data = [5i32, 5, 5];
         let fromoffsets = [0i64, 3];
-        let mut outoff  = [0i64; 2];
+        let mut outoff = [0i64; 2];
         unique_ranges_int32(&mut data, &fromoffsets, 2, &mut outoff);
         assert_eq!(outoff, [0, 1]);
         assert_eq!(data[0], 5);

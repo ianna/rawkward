@@ -1,9 +1,9 @@
+// Copyright (c) 2026 Ianna Osborne
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Shrink a jagged slice by filtering out missing entries.
 //!
 //! Corresponds to `src/cpu-kernels/awkward_ListArray_getitem_jagged_shrink.cpp`.
-
-// Copyright (c) 2026 Ianna Osborne
-// SPDX-License-Identifier: BSD-3-Clause
 
 /// For each outer list `i` in `slicestarts/slicestops`, scan `missing[j]` for
 /// `j` in `slicestarts[i]..slicestops[i]`:

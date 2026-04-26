@@ -1,9 +1,9 @@
+// Copyright (c) 2026 Ianna Osborne
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Validate the index array of an `IndexedArray` or `IndexedOptionArray`.
 //!
 //! Corresponds to `src/cpu-kernels/awkward_IndexedArray_validity.cpp`.
-
-// Copyright (c) 2026 Ianna Osborne
-// SPDX-License-Identifier: BSD-3-Clause
 
 use crate::kernels::cpu::error::KernelError;
 

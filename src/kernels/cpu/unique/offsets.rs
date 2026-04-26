@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Ianna Osborne 
+// Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
 //! Build output offsets for a unique-values pass, handling empty groups.
@@ -35,16 +35,40 @@ pub fn unique_offsets<T>(
     }
 }
 
-pub fn unique_offsets_int8(tooffsets: &mut [i8], length: usize, fromoffsets: &[i64], starts: &[i64], startslength: usize) {
+pub fn unique_offsets_int8(
+    tooffsets: &mut [i8],
+    length: usize,
+    fromoffsets: &[i64],
+    starts: &[i64],
+    startslength: usize,
+) {
     unique_offsets(tooffsets, length, fromoffsets, starts, startslength);
 }
-pub fn unique_offsets_int16(tooffsets: &mut [i16], length: usize, fromoffsets: &[i64], starts: &[i64], startslength: usize) {
+pub fn unique_offsets_int16(
+    tooffsets: &mut [i16],
+    length: usize,
+    fromoffsets: &[i64],
+    starts: &[i64],
+    startslength: usize,
+) {
     unique_offsets(tooffsets, length, fromoffsets, starts, startslength);
 }
-pub fn unique_offsets_int32(tooffsets: &mut [i32], length: usize, fromoffsets: &[i64], starts: &[i64], startslength: usize) {
+pub fn unique_offsets_int32(
+    tooffsets: &mut [i32],
+    length: usize,
+    fromoffsets: &[i64],
+    starts: &[i64],
+    startslength: usize,
+) {
     unique_offsets(tooffsets, length, fromoffsets, starts, startslength);
 }
-pub fn unique_offsets_int64(tooffsets: &mut [i64], length: usize, fromoffsets: &[i64], starts: &[i64], startslength: usize) {
+pub fn unique_offsets_int64(
+    tooffsets: &mut [i64],
+    length: usize,
+    fromoffsets: &[i64],
+    starts: &[i64],
+    startslength: usize,
+) {
     unique_offsets(tooffsets, length, fromoffsets, starts, startslength);
 }
 
@@ -55,8 +79,8 @@ mod tests {
     #[test]
     fn basic() {
         let fromoffsets = [0i64, 3, 6, 9];
-        let starts      = [0i64, 3, 6];
-        let mut out     = [0i64; 4];
+        let starts = [0i64, 3, 6];
+        let mut out = [0i64; 4];
         unique_offsets_int64(&mut out, 3, &fromoffsets, &starts, 3);
         assert_eq!(out, [0, 3, 6, 6]);
     }

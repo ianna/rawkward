@@ -1,10 +1,10 @@
+// Copyright (c) 2026 Ianna Osborne
+// SPDX-License-Identifier: BSD-3-Clause
+
 //! Count valid (non-null) entries in a jagged-slice getitem.
 //!
 //! Corresponds to
 //! `src/cpu-kernels/awkward_ListArray_getitem_jagged_numvalid.cpp`.
-
-// Copyright (c) 2026 Ianna Osborne
-// SPDX-License-Identifier: BSD-3-Clause
 
 use crate::kernels::cpu::error::KernelError;
 
