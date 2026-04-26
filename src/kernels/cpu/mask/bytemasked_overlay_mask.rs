@@ -50,6 +50,7 @@
 /// // i=3: their=0(valid), my_null=true  → 1
 /// assert_eq!(tomask, [1, 1, 0, 1]);
 /// ```
+#[inline]
 pub fn byte_masked_array_overlay_mask(
     tomask: &mut [i8],
     theirmask: &[i8],
@@ -59,14 +60,19 @@ pub fn byte_masked_array_overlay_mask(
     assert_eq!(tomask.len(), theirmask.len());
     assert_eq!(tomask.len(), mymask.len());
 
-    for i in 0..tomask.len() {
-        let their_null = theirmask[i] != 0;
-        let my_null = (mymask[i] != 0) != validwhen;
-        tomask[i] = (their_null || my_null) as i8;
+    for ((dst, &t), &m) in tomask
+        .iter_mut()
+        .zip(theirmask.iter())
+        .zip(mymask.iter())
+    {
+        let their_null = t != 0;
+        let my_null = (m != 0) != validwhen;
+        *dst = (their_null || my_null) as i8;
     }
 }
 
 /// Typed wrapper for `i8` masks (mirrors `awkward_ByteMaskedArray_overlay_mask8`).
+#[inline]
 pub fn byte_masked_array_overlay_mask_8(
     tomask: &mut [i8],
     theirmask: &[i8],

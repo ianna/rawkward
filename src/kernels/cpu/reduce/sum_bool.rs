@@ -8,14 +8,13 @@
 /// For each group, set `toptr[group] = true` if any `fromptr[i] != 0` in that group.
 ///
 /// `toptr` is zero-initialised before the loop.
+#[inline]
 pub fn reduce_sum_bool<IN>(toptr: &mut [bool], fromptr: &[IN], parents: &[i64])
 where
     IN: PartialEq + Default + Copy,
 {
     assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = false;
-    }
+    toptr.fill(false);
     let zero = IN::default();
     for (&val, &p) in fromptr.iter().zip(parents.iter()) {
         if val != zero {
@@ -26,12 +25,15 @@ where
 
 macro_rules! impl_sum_bool {
     ($fn_name:ident, $t:ty) => {
+        #[inline]
         pub fn $fn_name(toptr: &mut [bool], fromptr: &[$t], parents: &[i64]) {
             reduce_sum_bool(toptr, fromptr, parents)
         }
     };
 }
 
+// Floats use the generic too: `Default::default()` gives `0.0` and
+// `NaN != 0.0` is `true`, matching the C++ `fromptr[i] != 0` semantics.
 impl_sum_bool!(reduce_sum_bool_bool_64, bool);
 impl_sum_bool!(reduce_sum_bool_int8_64, i8);
 impl_sum_bool!(reduce_sum_bool_uint8_64, u8);
@@ -41,32 +43,8 @@ impl_sum_bool!(reduce_sum_bool_int32_64, i32);
 impl_sum_bool!(reduce_sum_bool_uint32_64, u32);
 impl_sum_bool!(reduce_sum_bool_int64_64, i64);
 impl_sum_bool!(reduce_sum_bool_uint64_64, u64);
-
-/// f32 variant (needs manual comparison to avoid `Default` NaN issue).
-pub fn reduce_sum_bool_float32_64(toptr: &mut [bool], fromptr: &[f32], parents: &[i64]) {
-    assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = false;
-    }
-    for (&val, &p) in fromptr.iter().zip(parents.iter()) {
-        if val != 0.0_f32 {
-            toptr[p as usize] = true;
-        }
-    }
-}
-
-/// f64 variant.
-pub fn reduce_sum_bool_float64_64(toptr: &mut [bool], fromptr: &[f64], parents: &[i64]) {
-    assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = false;
-    }
-    for (&val, &p) in fromptr.iter().zip(parents.iter()) {
-        if val != 0.0_f64 {
-            toptr[p as usize] = true;
-        }
-    }
-}
+impl_sum_bool!(reduce_sum_bool_float32_64, f32);
+impl_sum_bool!(reduce_sum_bool_float64_64, f64);
 
 #[cfg(test)]
 mod tests {

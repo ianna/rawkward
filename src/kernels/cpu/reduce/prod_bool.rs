@@ -7,14 +7,13 @@
 
 /// For each group, `toptr[group] = all elements != 0`.
 /// `toptr` is initialised to `true`.
+#[inline]
 pub fn reduce_prod_bool<IN>(toptr: &mut [bool], fromptr: &[IN], parents: &[i64])
 where
     IN: PartialEq + Default + Copy,
 {
     assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = true;
-    }
+    toptr.fill(true);
     let zero = IN::default();
     for (&val, &p) in fromptr.iter().zip(parents.iter()) {
         if val == zero {
@@ -25,12 +24,15 @@ where
 
 macro_rules! impl_prod_bool {
     ($fn_name:ident, $t:ty) => {
+        #[inline]
         pub fn $fn_name(toptr: &mut [bool], fromptr: &[$t], parents: &[i64]) {
             reduce_prod_bool(toptr, fromptr, parents)
         }
     };
 }
 
+// Floats use the generic; `Default::default()` gives `0.0`, and `NaN == 0.0`
+// is `false` so NaN never triggers the false-set branch — matching C++.
 impl_prod_bool!(reduce_prod_bool_bool_64, bool);
 impl_prod_bool!(reduce_prod_bool_int8_64, i8);
 impl_prod_bool!(reduce_prod_bool_uint8_64, u8);
@@ -40,30 +42,8 @@ impl_prod_bool!(reduce_prod_bool_int32_64, i32);
 impl_prod_bool!(reduce_prod_bool_uint32_64, u32);
 impl_prod_bool!(reduce_prod_bool_int64_64, i64);
 impl_prod_bool!(reduce_prod_bool_uint64_64, u64);
-
-pub fn reduce_prod_bool_float32_64(toptr: &mut [bool], fromptr: &[f32], parents: &[i64]) {
-    assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = true;
-    }
-    for (&val, &p) in fromptr.iter().zip(parents.iter()) {
-        if val == 0.0_f32 {
-            toptr[p as usize] = false;
-        }
-    }
-}
-
-pub fn reduce_prod_bool_float64_64(toptr: &mut [bool], fromptr: &[f64], parents: &[i64]) {
-    assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = true;
-    }
-    for (&val, &p) in fromptr.iter().zip(parents.iter()) {
-        if val == 0.0_f64 {
-            toptr[p as usize] = false;
-        }
-    }
-}
+impl_prod_bool!(reduce_prod_bool_float32_64, f32);
+impl_prod_bool!(reduce_prod_bool_float64_64, f64);
 
 #[cfg(test)]
 mod tests {

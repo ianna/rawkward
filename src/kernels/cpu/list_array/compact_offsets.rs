@@ -11,6 +11,7 @@ use crate::kernels::cpu::error::KernelError;
 ///
 /// `tooffsets[0] = 0`, then `tooffsets[i+1] = tooffsets[i] + (stops[i] - starts[i])`.
 /// Returns an error if `stops[i] < starts[i]` for any `i`.
+#[inline]
 pub fn list_array_compact_offsets<C>(
     tooffsets: &mut [i64],
     fromstarts: &[C],
@@ -23,17 +24,20 @@ where
     assert_eq!(fromstops.len(), length);
     assert!(tooffsets.len() > length);
     tooffsets[0] = 0;
-    for i in 0..length {
-        let start: i64 = fromstarts[i].into();
-        let stop: i64 = fromstops[i].into();
+    let mut acc: i64 = 0;
+    for (i, (&s, &e)) in fromstarts.iter().zip(fromstops.iter()).enumerate() {
+        let start: i64 = s.into();
+        let stop: i64 = e.into();
         if stop < start {
             return Err(KernelError::at("stops[i] < starts[i]", i as i64));
         }
-        tooffsets[i + 1] = tooffsets[i] + (stop - start);
+        acc += stop - start;
+        tooffsets[i + 1] = acc;
     }
     Ok(())
 }
 
+#[inline]
 pub fn list_array32_compact_offsets_64(
     tooffsets: &mut [i64],
     fromstarts: &[i32],
@@ -41,6 +45,7 @@ pub fn list_array32_compact_offsets_64(
 ) -> Result<(), KernelError> {
     list_array_compact_offsets(tooffsets, fromstarts, fromstops)
 }
+#[inline]
 pub fn list_array_u32_compact_offsets_64(
     tooffsets: &mut [i64],
     fromstarts: &[u32],
@@ -48,6 +53,7 @@ pub fn list_array_u32_compact_offsets_64(
 ) -> Result<(), KernelError> {
     list_array_compact_offsets(tooffsets, fromstarts, fromstops)
 }
+#[inline]
 pub fn list_array64_compact_offsets_64(
     tooffsets: &mut [i64],
     fromstarts: &[i64],

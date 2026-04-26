@@ -7,14 +7,13 @@
 
 /// For each group, find the index `i` of the maximum value.
 /// Groups with no elements retain `-1`.
+#[inline]
 pub fn reduce_argmax<IN>(toptr: &mut [i64], fromptr: &[IN], parents: &[i64])
 where
     IN: PartialOrd + Copy,
 {
     assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = -1;
-    }
+    toptr.fill(-1);
     for (i, (&val, &p)) in fromptr.iter().zip(parents.iter()).enumerate() {
         let best = toptr[p as usize];
         if best == -1 || val > fromptr[best as usize] {
@@ -25,6 +24,7 @@ where
 
 macro_rules! impl_argmax {
     ($fn_name:ident, $t:ty) => {
+        #[inline]
         pub fn $fn_name(toptr: &mut [i64], fromptr: &[$t], parents: &[i64]) {
             reduce_argmax(toptr, fromptr, parents)
         }

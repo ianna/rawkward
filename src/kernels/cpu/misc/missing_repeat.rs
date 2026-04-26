@@ -23,20 +23,25 @@
 /// // rep 1: [0+2, -1, 1+2] = [2, -1, 3]
 /// assert_eq!(out, [0, -1, 1, 2, -1, 3]);
 /// ```
+#[inline]
 pub fn missing_repeat(outindex: &mut [i64], index: &[i64], repetitions: i64, regularsize: i64) {
-    let indexlength = index.len() as i64;
-    for i in 0..repetitions {
-        let out_offset = (i * indexlength) as usize;
-        let val_offset = i * regularsize;
-        for j in 0..indexlength as usize {
-            let base = index[j];
-            let adjustment = if base >= 0 { val_offset } else { 0 };
-            outindex[out_offset + j] = base + adjustment;
+    let indexlength = index.len();
+    for i in 0..repetitions as usize {
+        let out_offset = i * indexlength;
+        let val_offset = (i as i64) * regularsize;
+        // Branchless: a sign-bit mask zeroes the offset when base < 0.
+        // `(base >> 63)` is `-1` if negative, `0` otherwise; `& !mask`
+        // therefore preserves `val_offset` only when base is non-negative.
+        let dst = &mut outindex[out_offset..out_offset + indexlength];
+        for (slot, &base) in dst.iter_mut().zip(index.iter()) {
+            let mask = base >> 63; // -1 if base < 0, else 0
+            *slot = base + (val_offset & !mask);
         }
     }
 }
 
 /// Typed alias (mirrors `awkward_missing_repeat_64`).
+#[inline]
 pub fn missing_repeat_64(outindex: &mut [i64], index: &[i64], repetitions: i64, regularsize: i64) {
     missing_repeat(outindex, index, repetitions, regularsize);
 }

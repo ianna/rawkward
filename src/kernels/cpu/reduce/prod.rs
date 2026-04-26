@@ -34,15 +34,14 @@ use std::ops::MulAssign;
 /// reduce_prod(&mut out, &from, &parents);
 /// assert_eq!(out, [6, 20]);
 /// ```
+#[inline]
 pub fn reduce_prod<OUT, IN>(toptr: &mut [OUT], fromptr: &[IN], parents: &[i64])
 where
     OUT: One + MulAssign + Copy,
     IN: Copy + Into<OUT>,
 {
     assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = OUT::one();
-    }
+    toptr.fill(OUT::one());
     for (&val, &p) in fromptr.iter().zip(parents.iter()) {
         toptr[p as usize] *= val.into();
     }
@@ -82,6 +81,7 @@ macro_rules! impl_reduce_prod {
                             "Product of `", stringify!($in), "` values into `", stringify!($out),
                             "` accumulators per group."
                         )]
+        #[inline]
         pub fn $fn_name(toptr: &mut [$out], fromptr: &[$in], parents: &[i64]) {
             reduce_prod(toptr, fromptr, parents)
         }

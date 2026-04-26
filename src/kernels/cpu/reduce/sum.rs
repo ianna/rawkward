@@ -34,15 +34,14 @@ use std::ops::AddAssign;
 /// reduce_sum(&mut out, &from, &parents);
 /// assert_eq!(out, [3, 7]);
 /// ```
+#[inline]
 pub fn reduce_sum<OUT, IN>(toptr: &mut [OUT], fromptr: &[IN], parents: &[i64])
 where
     OUT: Default + AddAssign + Copy,
     IN: Copy + Into<OUT>,
 {
     assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = OUT::default();
-    }
+    toptr.fill(OUT::default());
     for (&val, &p) in fromptr.iter().zip(parents.iter()) {
         toptr[p as usize] += val.into();
     }
@@ -56,6 +55,7 @@ macro_rules! impl_reduce_sum {
                                     "Sum `", stringify!($in), "` values into `", stringify!($out),
                                     "` accumulators per group."
                                 )]
+        #[inline]
         pub fn $fn_name(toptr: &mut [$out], fromptr: &[$in], parents: &[i64]) {
             reduce_sum(toptr, fromptr, parents)
         }

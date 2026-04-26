@@ -10,14 +10,13 @@
 ///
 /// `toptr` is initialised to `-1` (no value seen yet). A group with no elements
 /// retains `-1`.
+#[inline]
 pub fn reduce_argmin<IN>(toptr: &mut [i64], fromptr: &[IN], parents: &[i64])
 where
     IN: PartialOrd + Copy,
 {
     assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = -1;
-    }
+    toptr.fill(-1);
     for (i, (&val, &p)) in fromptr.iter().zip(parents.iter()).enumerate() {
         let best = toptr[p as usize];
         if best == -1 || val < fromptr[best as usize] {
@@ -28,6 +27,7 @@ where
 
 macro_rules! impl_argmin {
     ($fn_name:ident, $t:ty) => {
+        #[inline]
         pub fn $fn_name(toptr: &mut [i64], fromptr: &[$t], parents: &[i64]) {
             reduce_argmin(toptr, fromptr, parents)
         }

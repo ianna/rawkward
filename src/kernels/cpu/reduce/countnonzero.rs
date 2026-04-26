@@ -31,14 +31,13 @@
 /// reduce_countnonzero(&mut out, &from, &parents);
 /// assert_eq!(out, [2, 1]);
 /// ```
+#[inline]
 pub fn reduce_countnonzero<IN>(toptr: &mut [i64], fromptr: &[IN], parents: &[i64])
 where
     IN: PartialEq + Default,
 {
     assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = 0;
-    }
+    toptr.fill(0);
     let zero = IN::default();
     for (val, &p) in fromptr.iter().zip(parents.iter()) {
         if *val != zero {
@@ -48,70 +47,32 @@ where
 }
 
 // ── Typed specialisation wrappers (mirror C++ instantiations) ───────────────
+//
+// `f32` and `f64` use the generic too: `Default` gives `0.0`, and
+// `0.0 != 0.0` is `false` while `NaN != 0.0` is `true` — both match the
+// original C++ `fromptr[i] != 0` semantics.
 
-/// Count non-zero `bool` values per group.
-pub fn reduce_countnonzero_bool_64(toptr: &mut [i64], fromptr: &[bool], parents: &[i64]) {
-    reduce_countnonzero(toptr, fromptr, parents);
-}
-/// Count non-zero `i8` values per group.
-pub fn reduce_countnonzero_int8_64(toptr: &mut [i64], fromptr: &[i8], parents: &[i64]) {
-    reduce_countnonzero(toptr, fromptr, parents);
-}
-/// Count non-zero `u8` values per group.
-pub fn reduce_countnonzero_uint8_64(toptr: &mut [i64], fromptr: &[u8], parents: &[i64]) {
-    reduce_countnonzero(toptr, fromptr, parents);
-}
-/// Count non-zero `i16` values per group.
-pub fn reduce_countnonzero_int16_64(toptr: &mut [i64], fromptr: &[i16], parents: &[i64]) {
-    reduce_countnonzero(toptr, fromptr, parents);
-}
-/// Count non-zero `u16` values per group.
-pub fn reduce_countnonzero_uint16_64(toptr: &mut [i64], fromptr: &[u16], parents: &[i64]) {
-    reduce_countnonzero(toptr, fromptr, parents);
-}
-/// Count non-zero `i32` values per group.
-pub fn reduce_countnonzero_int32_64(toptr: &mut [i64], fromptr: &[i32], parents: &[i64]) {
-    reduce_countnonzero(toptr, fromptr, parents);
-}
-/// Count non-zero `u32` values per group.
-pub fn reduce_countnonzero_uint32_64(toptr: &mut [i64], fromptr: &[u32], parents: &[i64]) {
-    reduce_countnonzero(toptr, fromptr, parents);
-}
-/// Count non-zero `i64` values per group.
-pub fn reduce_countnonzero_int64_64(toptr: &mut [i64], fromptr: &[i64], parents: &[i64]) {
-    reduce_countnonzero(toptr, fromptr, parents);
-}
-/// Count non-zero `u64` values per group.
-pub fn reduce_countnonzero_uint64_64(toptr: &mut [i64], fromptr: &[u64], parents: &[i64]) {
-    reduce_countnonzero(toptr, fromptr, parents);
-}
-/// Count non-zero `f32` values per group.
-pub fn reduce_countnonzero_float32_64(toptr: &mut [i64], fromptr: &[f32], parents: &[i64]) {
-    // f32 does not implement `Default` == 0.0 that supports `PartialEq` against
-    // NaN cleanly, but `0.0_f32 == 0.0_f32` is `true` and NaN is non-zero,
-    // which matches C++ `fromptr[i] != 0` semantics.
-    assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = 0;
-    }
-    for (&val, &p) in fromptr.iter().zip(parents.iter()) {
-        if val != 0.0_f32 {
-            toptr[p as usize] += 1;
+macro_rules! impl_countnonzero {
+    ($fn_name:ident, $t:ty) => {
+        #[doc = concat!("Count non-zero `", stringify!($t), "` values per group.")]
+        #[inline]
+        pub fn $fn_name(toptr: &mut [i64], fromptr: &[$t], parents: &[i64]) {
+            reduce_countnonzero(toptr, fromptr, parents);
         }
-    }
+    };
 }
-/// Count non-zero `f64` values per group.
-pub fn reduce_countnonzero_float64_64(toptr: &mut [i64], fromptr: &[f64], parents: &[i64]) {
-    assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = 0;
-    }
-    for (&val, &p) in fromptr.iter().zip(parents.iter()) {
-        if val != 0.0_f64 {
-            toptr[p as usize] += 1;
-        }
-    }
-}
+
+impl_countnonzero!(reduce_countnonzero_bool_64, bool);
+impl_countnonzero!(reduce_countnonzero_int8_64, i8);
+impl_countnonzero!(reduce_countnonzero_uint8_64, u8);
+impl_countnonzero!(reduce_countnonzero_int16_64, i16);
+impl_countnonzero!(reduce_countnonzero_uint16_64, u16);
+impl_countnonzero!(reduce_countnonzero_int32_64, i32);
+impl_countnonzero!(reduce_countnonzero_uint32_64, u32);
+impl_countnonzero!(reduce_countnonzero_int64_64, i64);
+impl_countnonzero!(reduce_countnonzero_uint64_64, u64);
+impl_countnonzero!(reduce_countnonzero_float32_64, f32);
+impl_countnonzero!(reduce_countnonzero_float64_64, f64);
 
 #[cfg(test)]
 mod tests {

@@ -32,15 +32,14 @@
 /// reduce_min(&mut out, &from, &parents, i64::MAX);
 /// assert_eq!(out, [1, 2]);
 /// ```
+#[inline]
 pub fn reduce_min<OUT, IN>(toptr: &mut [OUT], fromptr: &[IN], parents: &[i64], identity: OUT)
 where
     OUT: PartialOrd + Copy,
     IN: Copy + Into<OUT>,
 {
     assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = identity;
-    }
+    toptr.fill(identity);
     for (&val, &p) in fromptr.iter().zip(parents.iter()) {
         let x: OUT = val.into();
         let slot = &mut toptr[p as usize];
@@ -57,6 +56,7 @@ macro_rules! impl_reduce_min {
         #[doc = concat!(
                                             "Minimum of `", stringify!($t), "` values per group."
                                         )]
+        #[inline]
         pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], parents: &[i64], identity: $t) {
             reduce_min(toptr, fromptr, parents, identity)
         }

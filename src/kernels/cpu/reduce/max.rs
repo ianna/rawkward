@@ -34,15 +34,14 @@ use std::cmp::PartialOrd;
 /// reduce_max(&mut out, &from, &parents, i64::MIN);
 /// assert_eq!(out, [3, 5]);
 /// ```
+#[inline]
 pub fn reduce_max<OUT, IN>(toptr: &mut [OUT], fromptr: &[IN], parents: &[i64], identity: OUT)
 where
     OUT: PartialOrd + Copy,
     IN: Copy + Into<OUT>,
 {
     assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = identity;
-    }
+    toptr.fill(identity);
     for (&val, &p) in fromptr.iter().zip(parents.iter()) {
         let x: OUT = val.into();
         let slot = &mut toptr[p as usize];
@@ -59,6 +58,7 @@ macro_rules! impl_reduce_max {
         #[doc = concat!(
                                             "Maximum of `", stringify!($t), "` values per group."
                                         )]
+        #[inline]
         pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], parents: &[i64], identity: $t) {
             reduce_max(toptr, fromptr, parents, identity)
         }
