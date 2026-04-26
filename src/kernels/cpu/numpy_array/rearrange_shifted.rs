@@ -37,8 +37,8 @@ pub fn numpy_array_rearrange_shifted(
     let length = fromparents.len();
     for i in 0..length {
         let parent = fromparents[i] as usize;
-        let start  = fromstarts[parent];
-        let idx    = toptr[i] as usize;
+        let start = fromstarts[parent];
+        let idx = toptr[i] as usize;
         toptr[i] += fromshifts[idx] - start;
     }
 }
@@ -62,12 +62,16 @@ mod tests {
     fn identity_case() {
         // Single list of 3 elements, offset=0, shifts=all-zero, starts=[0].
         let fromoffsets = [0i64, 3];
-        let fromshifts  = [0i64, 0, 0];
+        let fromshifts = [0i64, 0, 0];
         let fromparents = [0i64, 0, 0];
-        let fromstarts  = [0i64];
+        let fromstarts = [0i64];
         let mut toptr = [0i64, 1, 2];
         numpy_array_rearrange_shifted_toint64_fromint64(
-            &mut toptr, &fromshifts, &fromoffsets, &fromparents, &fromstarts,
+            &mut toptr,
+            &fromshifts,
+            &fromoffsets,
+            &fromparents,
+            &fromstarts,
         );
         // Pass1: toptr += 0 (offset[0]=0) → unchanged.
         // Pass2: toptr[i] += shifts[toptr[i]] - starts[0] = 0 - 0 = 0 → unchanged.
@@ -79,13 +83,17 @@ mod tests {
         // Single list, offset=5, shifts=all-zero, starts=[0].
         // After pass1: toptr = [5+0, 5+1] = [5,6].
         // Pass2: toptr[i] += shifts[toptr[i]] - 0.
-        let fromoffsets = [0i64, 2];
-        let fromshifts  = [0i64; 10];
+        let fromoffsets = [5i64, 7];
+        let fromshifts = [0i64; 10];
         let fromparents = [0i64, 0];
-        let fromstarts  = [0i64];
+        let fromstarts = [0i64];
         let mut toptr = [0i64, 1];
         numpy_array_rearrange_shifted_toint64_fromint64(
-            &mut toptr, &fromshifts, &fromoffsets, &fromparents, &fromstarts,
+            &mut toptr,
+            &fromshifts,
+            &fromoffsets,
+            &fromparents,
+            &fromstarts,
         );
         assert_eq!(toptr, [5, 6]);
     }

@@ -11,11 +11,10 @@
 ///
 /// Groups present in `parents` will have `toptr[g] = 0` (valid); groups absent
 /// will remain `1` (null).
-pub fn numpy_array_reduce_mask_byte_masked_array_64(
-    toptr: &mut [i8],
-    parents: &[i64],
-) {
-    for v in toptr.iter_mut() { *v = 1; }
+pub fn numpy_array_reduce_mask_byte_masked_array_64(toptr: &mut [i8], parents: &[i64]) {
+    for v in toptr.iter_mut() {
+        *v = 1;
+    }
     for &p in parents {
         toptr[p as usize] = 0;
     }

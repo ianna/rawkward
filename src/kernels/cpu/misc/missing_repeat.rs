@@ -23,12 +23,7 @@
 /// // rep 1: [0+2, -1, 1+2] = [2, -1, 3]
 /// assert_eq!(out, [0, -1, 1, 2, -1, 3]);
 /// ```
-pub fn missing_repeat(
-    outindex: &mut [i64],
-    index: &[i64],
-    repetitions: i64,
-    regularsize: i64,
-) {
+pub fn missing_repeat(outindex: &mut [i64], index: &[i64], repetitions: i64, regularsize: i64) {
     let indexlength = index.len() as i64;
     for i in 0..repetitions {
         let out_offset = (i * indexlength) as usize;
@@ -42,12 +37,7 @@ pub fn missing_repeat(
 }
 
 /// Typed alias (mirrors `awkward_missing_repeat_64`).
-pub fn missing_repeat_64(
-    outindex: &mut [i64],
-    index: &[i64],
-    repetitions: i64,
-    regularsize: i64,
-) {
+pub fn missing_repeat_64(outindex: &mut [i64], index: &[i64], repetitions: i64, regularsize: i64) {
     missing_repeat(outindex, index, repetitions, regularsize);
 }
 

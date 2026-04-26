@@ -15,7 +15,7 @@ use std::ops::MulAssign;
 /// # Type parameters
 ///
 /// * `OUT` – Accumulator type; must support `MulAssign` and be constructable
-///           as the value `1`.
+///   as the value `1`.
 /// * `IN`  – Input type; must be convertible into `OUT`.
 ///
 /// # Panics
@@ -79,34 +79,30 @@ impl_one! {
 macro_rules! impl_reduce_prod {
     ($fn_name:ident, $out:ty, $in:ty) => {
         #[doc = concat!(
-            "Product of `", stringify!($in), "` values into `", stringify!($out),
-            "` accumulators per group."
-        )]
-        pub fn $fn_name(
-            toptr: &mut [$out],
-            fromptr: &[$in],
-            parents: &[i64],
-        ) {
+                            "Product of `", stringify!($in), "` values into `", stringify!($out),
+                            "` accumulators per group."
+                        )]
+        pub fn $fn_name(toptr: &mut [$out], fromptr: &[$in], parents: &[i64]) {
             reduce_prod(toptr, fromptr, parents)
         }
     };
 }
 
-impl_reduce_prod!(reduce_prod_int64_int8_64,    i64, i8);
-impl_reduce_prod!(reduce_prod_uint64_uint8_64,  u64, u8);
-impl_reduce_prod!(reduce_prod_int64_int16_64,   i64, i16);
+impl_reduce_prod!(reduce_prod_int64_int8_64, i64, i8);
+impl_reduce_prod!(reduce_prod_uint64_uint8_64, u64, u8);
+impl_reduce_prod!(reduce_prod_int64_int16_64, i64, i16);
 impl_reduce_prod!(reduce_prod_uint64_uint16_64, u64, u16);
-impl_reduce_prod!(reduce_prod_int64_int32_64,   i64, i32);
+impl_reduce_prod!(reduce_prod_int64_int32_64, i64, i32);
 impl_reduce_prod!(reduce_prod_uint64_uint32_64, u64, u32);
-impl_reduce_prod!(reduce_prod_int64_int64_64,   i64, i64);
+impl_reduce_prod!(reduce_prod_int64_int64_64, i64, i64);
 impl_reduce_prod!(reduce_prod_uint64_uint64_64, u64, u64);
 impl_reduce_prod!(reduce_prod_float32_float32_64, f32, f32);
 impl_reduce_prod!(reduce_prod_float64_float64_64, f64, f64);
-impl_reduce_prod!(reduce_prod_int32_int8_64,    i32, i8);
-impl_reduce_prod!(reduce_prod_uint32_uint8_64,  u32, u8);
-impl_reduce_prod!(reduce_prod_int32_int16_64,   i32, i16);
+impl_reduce_prod!(reduce_prod_int32_int8_64, i32, i8);
+impl_reduce_prod!(reduce_prod_uint32_uint8_64, u32, u8);
+impl_reduce_prod!(reduce_prod_int32_int16_64, i32, i16);
 impl_reduce_prod!(reduce_prod_uint32_uint16_64, u32, u16);
-impl_reduce_prod!(reduce_prod_int32_int32_64,   i32, i32);
+impl_reduce_prod!(reduce_prod_int32_int32_64, i32, i32);
 impl_reduce_prod!(reduce_prod_uint32_uint32_64, u32, u32);
 
 #[cfg(test)]
@@ -115,7 +111,7 @@ mod tests {
 
     #[test]
     fn basic_i32() {
-        let from    = [2i32, 3, 4, 5];
+        let from = [2i32, 3, 4, 5];
         let parents = [0i64, 0, 1, 1];
         let mut out = [0i64; 2];
         reduce_prod_int64_int32_64(&mut out, &from, &parents);
@@ -125,7 +121,7 @@ mod tests {
     #[test]
     fn identity_when_empty_group() {
         // Group 1 gets no elements → remains 1
-        let from    = [3i64];
+        let from = [3i64];
         let parents = [0i64];
         let mut out = [0i64; 2];
         reduce_prod_int64_int64_64(&mut out, &from, &parents);
@@ -134,7 +130,7 @@ mod tests {
 
     #[test]
     fn float_product() {
-        let from    = [2.0f64, 0.5, 4.0];
+        let from = [2.0f64, 0.5, 4.0];
         let parents = [0i64, 0, 1];
         let mut out = [0.0f64; 2];
         reduce_prod_float64_float64_64(&mut out, &from, &parents);
@@ -144,7 +140,7 @@ mod tests {
 
     #[test]
     fn product_includes_zero() {
-        let from    = [5i32, 0];
+        let from = [5i32, 0];
         let parents = [0i64, 0];
         let mut out = [0i64; 1];
         reduce_prod_int64_int32_64(&mut out, &from, &parents);
