@@ -4,47 +4,47 @@
 //! Reduction kernel: sum elements into parent groups.
 //!
 //! Corresponds to `src/cpu-kernels/awkward_reduce_sum.cpp`.
+//!
+//! Iteration is **offsets-based**: for each output group `g`, accumulate
+//! `fromptr[offsets[g]..offsets[g+1]]` into a register-resident `acc` and
+//! store it once. This matches awkward C++ and lets LLVM auto-vectorize
+//! the inner loop. The previous parents-based scatter (`toptr[parents[i]]
+//! += val`) defeated the autovectorizer because of the indirect store.
 
 use std::ops::AddAssign;
 
-/// Sum elements from `fromptr` into `toptr`, grouped by `parents`.
+/// Sum elements of `fromptr` into `toptr`, grouped by `offsets`.
 ///
-/// `toptr` is zero-initialised, then for each `i`:
-/// `toptr[parents[i]] += OUT::from(fromptr[i])`.
-///
-/// # Type parameters
-///
-/// * `OUT` – Output accumulator type.  Must be zero-constructable (`Default`)
-///   and support `+=`.
-/// * `IN`  – Input element type.  Must be convertible into `OUT` via `Into`.
-///
-/// # Panics
-///
-/// Panics if `fromptr.len() != parents.len()` or if any parent index is out
-/// of range for `toptr`.
+/// `toptr[g]` receives the sum of `fromptr[offsets[g]..offsets[g+1]]`.
+/// The output length is `toptr.len()` and `offsets.len()` must equal
+/// `toptr.len() + 1`.
 ///
 /// # Examples
 ///
 /// ```
-/// use cpu_kernels::reduce_sum::reduce_sum;
+/// use cpu_kernels::reduce_sum::reduce_sum_int64_int8_64;
 ///
 /// let from    = [1i8, 2, 3, 4];
-/// let parents = [0i64, 0, 1, 1];
+/// let offsets = [0i64, 2, 4]; // two groups of two
 /// let mut out = [0i64; 2];
-/// reduce_sum(&mut out, &from, &parents);
+/// reduce_sum_int64_int8_64(&mut out, &from, &offsets);
 /// assert_eq!(out, [3, 7]);
 /// ```
-pub fn reduce_sum<OUT, IN>(toptr: &mut [OUT], fromptr: &[IN], parents: &[i64])
+#[inline]
+pub fn reduce_sum<OUT, IN>(toptr: &mut [OUT], fromptr: &[IN], offsets: &[i64])
 where
     OUT: Default + AddAssign + Copy,
     IN: Copy + Into<OUT>,
 {
-    assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = OUT::default();
-    }
-    for (&val, &p) in fromptr.iter().zip(parents.iter()) {
-        toptr[p as usize] += val.into();
+    assert_eq!(offsets.len(), toptr.len() + 1);
+    for (g, slot) in toptr.iter_mut().enumerate() {
+        let start = offsets[g] as usize;
+        let stop = offsets[g + 1] as usize;
+        let mut acc: OUT = OUT::default();
+        for &val in &fromptr[start..stop] {
+            acc += val.into();
+        }
+        *slot = acc;
     }
 }
 
@@ -56,8 +56,9 @@ macro_rules! impl_reduce_sum {
                                     "Sum `", stringify!($in), "` values into `", stringify!($out),
                                     "` accumulators per group."
                                 )]
-        pub fn $fn_name(toptr: &mut [$out], fromptr: &[$in], parents: &[i64]) {
-            reduce_sum(toptr, fromptr, parents)
+        #[inline]
+        pub fn $fn_name(toptr: &mut [$out], fromptr: &[$in], offsets: &[i64]) {
+            reduce_sum(toptr, fromptr, offsets)
         }
     };
 }
@@ -86,18 +87,18 @@ mod tests {
     #[test]
     fn basic_i8_to_i64() {
         let from = [1i8, 2, 3, 4];
-        let parents = [0i64, 0, 1, 1];
+        let offsets = [0i64, 2, 4];
         let mut out = [0i64; 2];
-        reduce_sum_int64_int8_64(&mut out, &from, &parents);
+        reduce_sum_int64_int8_64(&mut out, &from, &offsets);
         assert_eq!(out, [3, 7]);
     }
 
     #[test]
     fn float64_sum() {
         let from = [1.5f64, 2.5, 3.0];
-        let parents = [0i64, 0, 1];
+        let offsets = [0i64, 2, 3];
         let mut out = [0.0f64; 2];
-        reduce_sum_float64_float64_64(&mut out, &from, &parents);
+        reduce_sum_float64_float64_64(&mut out, &from, &offsets);
         assert!((out[0] - 4.0).abs() < 1e-12);
         assert!((out[1] - 3.0).abs() < 1e-12);
     }
@@ -105,27 +106,36 @@ mod tests {
     #[test]
     fn single_group() {
         let from = [10i32, 20, 30];
-        let parents = [0i64, 0, 0];
+        let offsets = [0i64, 3];
         let mut out = [0i32; 1];
-        reduce_sum_int32_int32_64(&mut out, &from, &parents);
+        reduce_sum_int32_int32_64(&mut out, &from, &offsets);
         assert_eq!(out[0], 60);
     }
 
     #[test]
     fn output_zeroed_first() {
         let from = [5i64];
-        let parents = [0i64];
+        let offsets = [0i64, 1];
         let mut out = [99i64; 1];
-        reduce_sum_int64_int64_64(&mut out, &from, &parents);
+        reduce_sum_int64_int64_64(&mut out, &from, &offsets);
         assert_eq!(out[0], 5);
+    }
+
+    #[test]
+    fn empty_group() {
+        let from = [10i64, 20];
+        let offsets = [0i64, 2, 2]; // group 1 is empty
+        let mut out = [0i64; 2];
+        reduce_sum_int64_int64_64(&mut out, &from, &offsets);
+        assert_eq!(out, [30, 0]);
     }
 
     #[test]
     fn unsigned_sum() {
         let from = [100u32, 200, 300];
-        let parents = [0i64, 1, 1];
+        let offsets = [0i64, 1, 3];
         let mut out = [0u64; 2];
-        reduce_sum_uint64_uint32_64(&mut out, &from, &parents);
+        reduce_sum_uint64_uint32_64(&mut out, &from, &offsets);
         assert_eq!(out, [100, 500]);
     }
 }

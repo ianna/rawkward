@@ -16,6 +16,10 @@ crate-type = ["cdylib", "rlib"]
 # which makes the linker use dynamic-lookup on macOS and weak symbols on
 # Linux — no libpython required at link time. This is what `maturin develop`
 # does, and it works the same on macOS, Linux CI, and Windows.
+# Default: build the Python extension. `python` uses pyo3/extension-module,
+# which makes the linker use dynamic-lookup on macOS and weak symbols on
+# Linux — no libpython required at link time. This is what `maturin develop`
+# does, and it works the same on macOS, Linux CI, and Windows.
 default = ["python"]
 python = ["dep:pyo3", "pyo3/extension-module"]
 
@@ -27,6 +31,12 @@ auto-initialize = ["dep:pyo3", "pyo3/auto-initialize"]
 
 # Async + networking. Off by default; turn on with `--features remote`.
 remote = ["dep:reqwest", "dep:tokio"]
+
+# Compile + link the awkward C++ kernels for side-by-side benchmarking.
+# Requires the awkward-cpp source tree on disk; the path is auto-detected
+# (~/Projects/awkward.2.9.x/awkward/awkward-cpp) or override with the
+# AWKWARD_CPP_PATH env var. Used by the `bench` target only.
+bench-cxx = []
 
 [dependencies]
 pyo3 = { version = "0.23", optional = true, features = ["abi3-py39", "auto-initialize"] }
@@ -43,8 +53,12 @@ xz2 = "0.1"
 zstd = { version = "0.13", features = ["zstdmt"] }
 
 # Optional networking deps — enabled by the `remote` feature.
+# Optional networking deps — enabled by the `remote` feature.
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "http2"], optional = true }
 tokio = { version = "1.44", features = ["macros", "rt", "rt-multi-thread", "sync"], optional = true }
+
+[build-dependencies]
+cc = "1.0"
 
 [dev-dependencies]
 proptest = "1.5"
@@ -53,3 +67,8 @@ criterion = "0.5"
 [[example]]
 name = "basic_usage"
 required-features = ["python"]
+
+[[bench]]
+name = "kernels"
+harness = false
+

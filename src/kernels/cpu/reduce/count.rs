@@ -31,10 +31,9 @@
 /// reduce_count_64(&mut out, &parents);
 /// assert_eq!(out, [2, 1, 3]);
 /// ```
+#[inline]
 pub fn reduce_count_64(toptr: &mut [i64], parents: &[i64]) {
-    for v in toptr.iter_mut() {
-        *v = 0;
-    }
+    toptr.fill(0);
     for &p in parents {
         toptr[p as usize] += 1;
     }
