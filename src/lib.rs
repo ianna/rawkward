@@ -11,6 +11,7 @@ use pyo3::prelude::*;
 
 pub mod content;
 pub mod dtype;
+pub mod gpu;
 pub mod kernels;
 pub mod layout;
 pub mod python;

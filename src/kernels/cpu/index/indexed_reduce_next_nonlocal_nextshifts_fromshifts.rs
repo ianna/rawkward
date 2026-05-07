@@ -22,7 +22,7 @@
 /// # Examples
 ///
 /// ```
-/// use cpu_kernels::indexed_array_reduce_next_nonlocal_nextshifts_fromshifts_64::indexed_array64_reduce_next_nonlocal_nextshifts_fromshifts_64;
+/// use kernels::cpu::index::indexed_reduce_next_nonlocal_nextshifts_fromshifts::indexed_array64_reduce_next_nonlocal_nextshifts_fromshifts_64;
 ///
 /// let index  = [0i64, -1, 1];
 /// let shifts = [10i64, 0, 5];

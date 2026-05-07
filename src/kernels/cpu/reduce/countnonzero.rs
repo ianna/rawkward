@@ -23,7 +23,7 @@
 /// # Examples
 ///
 /// ```
-/// use cpu_kernels::reduce_countnonzero::reduce_countnonzero;
+/// use kernels::cpu::reduce::countnonzero;
 ///
 /// let from    = [1i32, 0, 3, 0, 5];
 /// let parents = [0i64, 0, 0, 1, 1];
