@@ -3,31 +3,42 @@
 
 //! Reduction kernel: boolean OR (any non-zero) per group.
 //!
-//! Corresponds to `src/cpu-kernels/awkward_reduce_sum_bool.cpp`.
+//! Corresponds to `src/cpu-kernels/awkward_reduce_sum_bool.cpp`. Offsets-
+//! based iteration with a per-group early-exit on the first non-zero
+//! element — this is what closes the gap to awkward C++ on this kernel.
 
-/// For each group, set `toptr[group] = true` if any `fromptr[i] != 0` in that group.
+/// For each group, set `toptr[g] = true` if any
+/// `fromptr[offsets[g]..offsets[g+1]] != 0`.
 ///
-/// `toptr` is zero-initialised before the loop.
+/// Per-group early-exit on the first non-zero element makes the average
+/// inner-loop length roughly `2` for ~50/50 input data, regardless of the
+/// nominal group size.
 #[inline]
-pub fn reduce_sum_bool<IN>(toptr: &mut [bool], fromptr: &[IN], parents: &[i64])
+pub fn reduce_sum_bool<IN>(toptr: &mut [bool], fromptr: &[IN], offsets: &[i64])
 where
     IN: PartialEq + Default + Copy,
 {
-    assert_eq!(fromptr.len(), parents.len());
-    toptr.fill(false);
+    assert_eq!(offsets.len(), toptr.len() + 1);
     let zero = IN::default();
-    for (&val, &p) in fromptr.iter().zip(parents.iter()) {
-        if val != zero {
-            toptr[p as usize] = true;
+    for (g, slot) in toptr.iter_mut().enumerate() {
+        let start = offsets[g] as usize;
+        let stop = offsets[g + 1] as usize;
+        let mut found = false;
+        for &val in &fromptr[start..stop] {
+            if val != zero {
+                found = true;
+                break;
+            }
         }
+        *slot = found;
     }
 }
 
 macro_rules! impl_sum_bool {
     ($fn_name:ident, $t:ty) => {
         #[inline]
-        pub fn $fn_name(toptr: &mut [bool], fromptr: &[$t], parents: &[i64]) {
-            reduce_sum_bool(toptr, fromptr, parents)
+        pub fn $fn_name(toptr: &mut [bool], fromptr: &[$t], offsets: &[i64]) {
+            reduce_sum_bool(toptr, fromptr, offsets)
         }
     };
 }
@@ -53,27 +64,36 @@ mod tests {
     #[test]
     fn any_nonzero() {
         let from = [0i32, 1, 0, 0];
-        let parents = [0i64, 0, 1, 1];
+        let offsets = [0i64, 2, 4];
         let mut out = [false; 2];
-        reduce_sum_bool_int32_64(&mut out, &from, &parents);
+        reduce_sum_bool_int32_64(&mut out, &from, &offsets);
         assert_eq!(out, [true, false]);
     }
 
     #[test]
     fn all_zero() {
         let from = [0i64; 4];
-        let parents = [0i64, 0, 1, 1];
+        let offsets = [0i64, 2, 4];
         let mut out = [false; 2];
-        reduce_sum_bool_int64_64(&mut out, &from, &parents);
+        reduce_sum_bool_int64_64(&mut out, &from, &offsets);
         assert_eq!(out, [false, false]);
     }
 
     #[test]
     fn bool_input() {
         let from = [false, true, false];
-        let parents = [0i64, 0, 0];
+        let offsets = [0i64, 3];
         let mut out = [false; 1];
-        reduce_sum_bool_bool_64(&mut out, &from, &parents);
+        reduce_sum_bool_bool_64(&mut out, &from, &offsets);
         assert!(out[0]);
+    }
+
+    #[test]
+    fn empty_group_is_false() {
+        let from = [1i32];
+        let offsets = [0i64, 1, 1];
+        let mut out = [true; 2];
+        reduce_sum_bool_int32_64(&mut out, &from, &offsets);
+        assert_eq!(out, [true, false]);
     }
 }

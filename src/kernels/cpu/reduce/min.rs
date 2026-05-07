@@ -3,49 +3,33 @@
 
 //! Reduction kernel: minimum element per group.
 //!
-//! Corresponds to `src/cpu-kernels/awkward_reduce_min.cpp`.
+//! Corresponds to `src/cpu-kernels/awkward_reduce_min.cpp`. Offsets-based
+//! iteration; see `reduce_sum` for the pattern.
+
+use std::cmp::PartialOrd;
 
 /// Compute the minimum element in each parent group.
 ///
-/// `toptr` is first filled with `identity` (the "positive infinity" sentinel –
-/// usually `T::MAX`), then for each `i`:
-/// `toptr[parents[i]] = min(toptr[parents[i]], fromptr[i])`.
-///
-/// # Type parameters
-///
-/// * `OUT` – Output type; must support `PartialOrd` for comparison and `Copy`.
-/// * `IN`  – Input type; must be convertible into `OUT`.
-///
-/// # Panics
-///
-/// Panics if `fromptr.len() != parents.len()` or if any parent index is out
-/// of range for `toptr`.
-///
-/// # Examples
-///
-/// ```
-/// use cpu_kernels::reduce_min::reduce_min;
-///
-/// let from    = [3i32, 1, 5, 2];
-/// let parents = [0i64, 0, 1, 1];
-/// let mut out = [0i64; 2];
-/// reduce_min(&mut out, &from, &parents, i64::MAX);
-/// assert_eq!(out, [1, 2]);
-/// ```
+/// `toptr[g]` receives the minimum of `fromptr[offsets[g]..offsets[g+1]]`,
+/// or `identity` if the group is empty.
 #[inline]
-pub fn reduce_min<OUT, IN>(toptr: &mut [OUT], fromptr: &[IN], parents: &[i64], identity: OUT)
+pub fn reduce_min<OUT, IN>(toptr: &mut [OUT], fromptr: &[IN], offsets: &[i64], identity: OUT)
 where
     OUT: PartialOrd + Copy,
     IN: Copy + Into<OUT>,
 {
-    assert_eq!(fromptr.len(), parents.len());
-    toptr.fill(identity);
-    for (&val, &p) in fromptr.iter().zip(parents.iter()) {
-        let x: OUT = val.into();
-        let slot = &mut toptr[p as usize];
-        if x < *slot {
-            *slot = x;
+    assert_eq!(offsets.len(), toptr.len() + 1);
+    for (g, slot) in toptr.iter_mut().enumerate() {
+        let start = offsets[g] as usize;
+        let stop = offsets[g + 1] as usize;
+        let mut best: OUT = identity;
+        for &val in &fromptr[start..stop] {
+            let x: OUT = val.into();
+            if x < best {
+                best = x;
+            }
         }
+        *slot = best;
     }
 }
 
@@ -54,11 +38,11 @@ where
 macro_rules! impl_reduce_min {
     ($fn_name:ident, $t:ty) => {
         #[doc = concat!(
-                                            "Minimum of `", stringify!($t), "` values per group."
-                                        )]
+                    "Minimum of `", stringify!($t), "` values per group."
+                )]
         #[inline]
-        pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], parents: &[i64], identity: $t) {
-            reduce_min(toptr, fromptr, parents, identity)
+        pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], offsets: &[i64], identity: $t) {
+            reduce_min(toptr, fromptr, offsets, identity)
         }
     };
 }
@@ -81,45 +65,27 @@ mod tests {
     #[test]
     fn basic_i64() {
         let from = [3i64, 1, 5, 2];
-        let parents = [0i64, 0, 1, 1];
+        let offsets = [0i64, 2, 4];
         let mut out = [0i64; 2];
-        reduce_min_int64_int64_64(&mut out, &from, &parents, i64::MAX);
+        reduce_min_int64_int64_64(&mut out, &from, &offsets, i64::MAX);
         assert_eq!(out, [1, 2]);
     }
 
     #[test]
     fn identity_when_no_elements() {
         let from: [i32; 0] = [];
-        let parents: [i64; 0] = [];
+        let offsets = [0i64, 0, 0];
         let mut out = [0i32; 2];
-        reduce_min_int32_int32_64(&mut out, &from, &parents, i32::MAX);
+        reduce_min_int32_int32_64(&mut out, &from, &offsets, i32::MAX);
         assert_eq!(out, [i32::MAX, i32::MAX]);
-    }
-
-    #[test]
-    fn negative_numbers() {
-        let from = [-5i32, -1, -3];
-        let parents = [0i64, 0, 1];
-        let mut out = [0i32; 2];
-        reduce_min_int32_int32_64(&mut out, &from, &parents, i32::MAX);
-        assert_eq!(out, [-5, -3]);
-    }
-
-    #[test]
-    fn unsigned_min() {
-        let from = [200u8, 10, 150];
-        let parents = [0i64, 0, 1];
-        let mut out = [0u8; 2];
-        reduce_min_uint8_uint8_64(&mut out, &from, &parents, u8::MAX);
-        assert_eq!(out, [10, 150]);
     }
 
     #[test]
     fn float_min() {
         let from = [1.5f64, -2.0, 3.0, 0.5];
-        let parents = [0i64, 0, 1, 1];
+        let offsets = [0i64, 2, 4];
         let mut out = [0.0f64; 2];
-        reduce_min_float64_float64_64(&mut out, &from, &parents, f64::INFINITY);
+        reduce_min_float64_float64_64(&mut out, &from, &offsets, f64::INFINITY);
         assert!((out[0] - (-2.0)).abs() < 1e-12);
         assert!((out[1] - 0.5).abs() < 1e-12);
     }

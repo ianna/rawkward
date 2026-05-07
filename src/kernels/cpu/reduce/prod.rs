@@ -3,47 +3,30 @@
 
 //! Reduction kernel: multiply elements into parent groups.
 //!
-//! Corresponds to `src/cpu-kernels/awkward_reduce_prod.cpp`.
+//! Corresponds to `src/cpu-kernels/awkward_reduce_prod.cpp`. Offsets-based
+//! iteration; see `reduce_sum` for the pattern.
 
 use std::ops::MulAssign;
 
-/// Multiply elements from `fromptr` into `toptr`, grouped by `parents`.
+/// Multiply elements of `fromptr` into `toptr`, grouped by `offsets`.
 ///
-/// `toptr` is initialised to `1` (the multiplicative identity), then for
-/// each `i`: `toptr[parents[i]] *= OUT::from(fromptr[i])`.
-///
-/// # Type parameters
-///
-/// * `OUT` – Accumulator type; must support `MulAssign` and be constructable
-///   as the value `1`.
-/// * `IN`  – Input type; must be convertible into `OUT`.
-///
-/// # Panics
-///
-/// Panics if `fromptr.len() != parents.len()` or if any parent index is out
-/// of range for `toptr`.
-///
-/// # Examples
-///
-/// ```
-/// use cpu_kernels::reduce_prod::reduce_prod;
-///
-/// let from    = [2i32, 3, 4, 5];
-/// let parents = [0i64, 0, 1, 1];
-/// let mut out = [0i64; 2];
-/// reduce_prod(&mut out, &from, &parents);
-/// assert_eq!(out, [6, 20]);
-/// ```
+/// `toptr[g]` receives the product of `fromptr[offsets[g]..offsets[g+1]]`,
+/// or `1` (the multiplicative identity) if the group is empty.
 #[inline]
-pub fn reduce_prod<OUT, IN>(toptr: &mut [OUT], fromptr: &[IN], parents: &[i64])
+pub fn reduce_prod<OUT, IN>(toptr: &mut [OUT], fromptr: &[IN], offsets: &[i64])
 where
     OUT: One + MulAssign + Copy,
     IN: Copy + Into<OUT>,
 {
-    assert_eq!(fromptr.len(), parents.len());
-    toptr.fill(OUT::one());
-    for (&val, &p) in fromptr.iter().zip(parents.iter()) {
-        toptr[p as usize] *= val.into();
+    assert_eq!(offsets.len(), toptr.len() + 1);
+    for (g, slot) in toptr.iter_mut().enumerate() {
+        let start = offsets[g] as usize;
+        let stop = offsets[g + 1] as usize;
+        let mut acc: OUT = OUT::one();
+        for &val in &fromptr[start..stop] {
+            acc *= val.into();
+        }
+        *slot = acc;
     }
 }
 
@@ -78,12 +61,12 @@ impl_one! {
 macro_rules! impl_reduce_prod {
     ($fn_name:ident, $out:ty, $in:ty) => {
         #[doc = concat!(
-                            "Product of `", stringify!($in), "` values into `", stringify!($out),
-                            "` accumulators per group."
-                        )]
+                    "Product of `", stringify!($in), "` values into `", stringify!($out),
+                    "` accumulators per group."
+                )]
         #[inline]
-        pub fn $fn_name(toptr: &mut [$out], fromptr: &[$in], parents: &[i64]) {
-            reduce_prod(toptr, fromptr, parents)
+        pub fn $fn_name(toptr: &mut [$out], fromptr: &[$in], offsets: &[i64]) {
+            reduce_prod(toptr, fromptr, offsets)
         }
     };
 }
@@ -112,28 +95,27 @@ mod tests {
     #[test]
     fn basic_i32() {
         let from = [2i32, 3, 4, 5];
-        let parents = [0i64, 0, 1, 1];
+        let offsets = [0i64, 2, 4];
         let mut out = [0i64; 2];
-        reduce_prod_int64_int32_64(&mut out, &from, &parents);
+        reduce_prod_int64_int32_64(&mut out, &from, &offsets);
         assert_eq!(out, [6, 20]);
     }
 
     #[test]
     fn identity_when_empty_group() {
-        // Group 1 gets no elements → remains 1
         let from = [3i64];
-        let parents = [0i64];
+        let offsets = [0i64, 1, 1]; // group 1 is empty
         let mut out = [0i64; 2];
-        reduce_prod_int64_int64_64(&mut out, &from, &parents);
+        reduce_prod_int64_int64_64(&mut out, &from, &offsets);
         assert_eq!(out, [3, 1]);
     }
 
     #[test]
     fn float_product() {
         let from = [2.0f64, 0.5, 4.0];
-        let parents = [0i64, 0, 1];
+        let offsets = [0i64, 2, 3];
         let mut out = [0.0f64; 2];
-        reduce_prod_float64_float64_64(&mut out, &from, &parents);
+        reduce_prod_float64_float64_64(&mut out, &from, &offsets);
         assert!((out[0] - 1.0).abs() < 1e-12);
         assert!((out[1] - 4.0).abs() < 1e-12);
     }
@@ -141,19 +123,18 @@ mod tests {
     #[test]
     fn product_includes_zero() {
         let from = [5i32, 0];
-        let parents = [0i64, 0];
+        let offsets = [0i64, 2];
         let mut out = [0i64; 1];
-        reduce_prod_int64_int32_64(&mut out, &from, &parents);
+        reduce_prod_int64_int32_64(&mut out, &from, &offsets);
         assert_eq!(out[0], 0);
     }
 
     #[test]
     fn output_initialised_to_one() {
-        // No input elements → output should be multiplicative identity
         let from: [i32; 0] = [];
-        let parents: [i64; 0] = [];
-        let mut out = [42i64; 2]; // should be overwritten with 1, not 42
-        reduce_prod_int64_int32_64(&mut out, &from, &parents);
+        let offsets = [0i64, 0, 0];
+        let mut out = [42i64; 2];
+        reduce_prod_int64_int32_64(&mut out, &from, &offsets);
         assert_eq!(out, [1, 1]);
     }
 }

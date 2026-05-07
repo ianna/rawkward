@@ -28,6 +28,12 @@ auto-initialize = ["dep:pyo3", "pyo3/auto-initialize"]
 # Async + networking. Off by default; turn on with `--features remote`.
 remote = ["dep:reqwest", "dep:tokio"]
 
+# Compile + link the awkward C++ kernels for side-by-side benchmarking.
+# Requires the awkward-cpp source tree on disk; the path is auto-detected
+# (~/Projects/awkward.2.9.x/awkward/awkward-cpp) or override with the
+# AWKWARD_CPP_PATH env var. Used by the `bench` target only.
+bench-cxx = []
+
 [dependencies]
 pyo3 = { version = "0.23", optional = true, features = ["abi3-py39"] }
 arrow = "53"
@@ -46,6 +52,9 @@ zstd = { version = "0.13", features = ["zstdmt"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "http2"], optional = true }
 tokio = { version = "1.44", features = ["macros", "rt", "rt-multi-thread", "sync"], optional = true }
 
+[build-dependencies]
+cc = "1.0"
+
 [dev-dependencies]
 proptest = "1.5"
 criterion = "0.5"
@@ -53,3 +62,8 @@ criterion = "0.5"
 [[example]]
 name = "basic_usage"
 required-features = ["python"]
+
+[[bench]]
+name = "kernels"
+harness = false
+

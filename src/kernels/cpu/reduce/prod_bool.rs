@@ -3,36 +3,41 @@
 
 //! Reduction kernel: boolean AND (all non-zero) per group.
 //!
-//! Corresponds to `src/cpu-kernels/awkward_reduce_prod_bool.cpp`.
+//! Corresponds to `src/cpu-kernels/awkward_reduce_prod_bool.cpp`. Offsets-
+//! based iteration with per-group early-exit on the first zero element.
 
-/// For each group, `toptr[group] = all elements != 0`.
-/// `toptr` is initialised to `true`.
+/// For each group, set `toptr[g] = true` iff all
+/// `fromptr[offsets[g]..offsets[g+1]] != 0`. Empty groups are vacuously true.
 #[inline]
-pub fn reduce_prod_bool<IN>(toptr: &mut [bool], fromptr: &[IN], parents: &[i64])
+pub fn reduce_prod_bool<IN>(toptr: &mut [bool], fromptr: &[IN], offsets: &[i64])
 where
     IN: PartialEq + Default + Copy,
 {
-    assert_eq!(fromptr.len(), parents.len());
-    toptr.fill(true);
+    assert_eq!(offsets.len(), toptr.len() + 1);
     let zero = IN::default();
-    for (&val, &p) in fromptr.iter().zip(parents.iter()) {
-        if val == zero {
-            toptr[p as usize] = false;
+    for (g, slot) in toptr.iter_mut().enumerate() {
+        let start = offsets[g] as usize;
+        let stop = offsets[g + 1] as usize;
+        let mut all = true;
+        for &val in &fromptr[start..stop] {
+            if val == zero {
+                all = false;
+                break;
+            }
         }
+        *slot = all;
     }
 }
 
 macro_rules! impl_prod_bool {
     ($fn_name:ident, $t:ty) => {
         #[inline]
-        pub fn $fn_name(toptr: &mut [bool], fromptr: &[$t], parents: &[i64]) {
-            reduce_prod_bool(toptr, fromptr, parents)
+        pub fn $fn_name(toptr: &mut [bool], fromptr: &[$t], offsets: &[i64]) {
+            reduce_prod_bool(toptr, fromptr, offsets)
         }
     };
 }
 
-// Floats use the generic; `Default::default()` gives `0.0`, and `NaN == 0.0`
-// is `false` so NaN never triggers the false-set branch — matching C++.
 impl_prod_bool!(reduce_prod_bool_bool_64, bool);
 impl_prod_bool!(reduce_prod_bool_int8_64, i8);
 impl_prod_bool!(reduce_prod_bool_uint8_64, u8);
@@ -52,28 +57,27 @@ mod tests {
     #[test]
     fn all_nonzero() {
         let from = [1i32, 2, 3, 4];
-        let parents = [0i64, 0, 1, 1];
+        let offsets = [0i64, 2, 4];
         let mut out = [false; 2];
-        reduce_prod_bool_int32_64(&mut out, &from, &parents);
+        reduce_prod_bool_int32_64(&mut out, &from, &offsets);
         assert_eq!(out, [true, true]);
     }
 
     #[test]
     fn zero_makes_false() {
         let from = [1i64, 0, 2];
-        let parents = [0i64, 0, 1];
+        let offsets = [0i64, 2, 3];
         let mut out = [false; 2];
-        reduce_prod_bool_int64_64(&mut out, &from, &parents);
+        reduce_prod_bool_int64_64(&mut out, &from, &offsets);
         assert_eq!(out, [false, true]);
     }
 
     #[test]
     fn empty_group_stays_true() {
-        // group 1 gets no elements → true (vacuous truth)
         let from = [1i32];
-        let parents = [0i64];
+        let offsets = [0i64, 1, 1];
         let mut out = [false; 2];
-        reduce_prod_bool_int32_64(&mut out, &from, &parents);
+        reduce_prod_bool_int32_64(&mut out, &from, &offsets);
         assert_eq!(out, [true, true]);
     }
 }

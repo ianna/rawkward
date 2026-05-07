@@ -60,11 +60,7 @@ pub fn byte_masked_array_overlay_mask(
     assert_eq!(tomask.len(), theirmask.len());
     assert_eq!(tomask.len(), mymask.len());
 
-    for ((dst, &t), &m) in tomask
-        .iter_mut()
-        .zip(theirmask.iter())
-        .zip(mymask.iter())
-    {
+    for ((dst, &t), &m) in tomask.iter_mut().zip(theirmask.iter()).zip(mymask.iter()) {
         let their_null = t != 0;
         let my_null = (m != 0) != validwhen;
         *dst = (their_null || my_null) as i8;
