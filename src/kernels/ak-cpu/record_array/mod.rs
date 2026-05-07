@@ -1,0 +1,6 @@
+// Copyright (c) 2026 Ianna Osborne
+// SPDX-License-Identifier: BSD-3-Clause
+
+//! RecordArray kernels.
+
+pub mod reduce_nonlocal_outoffsets;
