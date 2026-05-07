@@ -53,9 +53,9 @@ where
 macro_rules! impl_reduce_sum {
     ($fn_name:ident, $out:ty, $in:ty) => {
         #[doc = concat!(
-                            "Sum `", stringify!($in), "` values into `", stringify!($out),
-                            "` accumulators per group."
-                        )]
+                                    "Sum `", stringify!($in), "` values into `", stringify!($out),
+                                    "` accumulators per group."
+                                )]
         #[inline]
         pub fn $fn_name(toptr: &mut [$out], fromptr: &[$in], offsets: &[i64]) {
             reduce_sum(toptr, fromptr, offsets)

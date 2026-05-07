@@ -38,8 +38,8 @@ where
 macro_rules! impl_reduce_max {
     ($fn_name:ident, $t:ty) => {
         #[doc = concat!(
-                            "Maximum of `", stringify!($t), "` values per group."
-                        )]
+                                            "Maximum of `", stringify!($t), "` values per group."
+                                        )]
         #[inline]
         pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], offsets: &[i64], identity: $t) {
             reduce_max(toptr, fromptr, offsets, identity)

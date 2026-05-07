@@ -38,8 +38,8 @@ where
 macro_rules! impl_reduce_min {
     ($fn_name:ident, $t:ty) => {
         #[doc = concat!(
-                            "Minimum of `", stringify!($t), "` values per group."
-                        )]
+                                            "Minimum of `", stringify!($t), "` values per group."
+                                        )]
         #[inline]
         pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], offsets: &[i64], identity: $t) {
             reduce_min(toptr, fromptr, offsets, identity)
