@@ -1,0 +1,64 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Set up Micromamba
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: rawkward-ci
+          init-shell: bash
+          create-args: >-
+            python=3.13
+            pip
+
+      - name: Install dependencies
+        shell: bash -leo pipefail {0}
+        run: |
+          python -m pip install maturin pytest numpy awkward
+
+      - name: Check formatting
+        shell: bash -leo pipefail {0}
+        run: cargo fmt --check
+
+      - name: Lint with clippy
+        shell: bash -leo pipefail {0}
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Build and Test Rust Core
+        shell: bash -leo pipefail {0}
+        run: |
+          # We run cargo test within the mamba shell so it can find Python libs
+          cargo test --no-default-features --lib
+
+      - name: Build Python Extension (MVP)
+        shell: bash -leo pipefail {0}
+        run: |
+          # This compiles the Rust code into a Python-importable module
+          python -m maturin develop --features python
+
+      - name: Run Python API Tests
+        shell: bash -leo pipefail {0}
+        run: |
+          python -m pytest tests/test_rawkward.py

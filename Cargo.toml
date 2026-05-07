@@ -16,6 +16,10 @@ crate-type = ["cdylib", "rlib"]
 # which makes the linker use dynamic-lookup on macOS and weak symbols on
 # Linux — no libpython required at link time. This is what `maturin develop`
 # does, and it works the same on macOS, Linux CI, and Windows.
+# Default: build the Python extension. `python` uses pyo3/extension-module,
+# which makes the linker use dynamic-lookup on macOS and weak symbols on
+# Linux — no libpython required at link time. This is what `maturin develop`
+# does, and it works the same on macOS, Linux CI, and Windows.
 default = ["python"]
 python = ["dep:pyo3", "pyo3/extension-module"]
 
@@ -35,7 +39,7 @@ remote = ["dep:reqwest", "dep:tokio"]
 bench-cxx = []
 
 [dependencies]
-pyo3 = { version = "0.23", optional = true, features = ["abi3-py39"] }
+pyo3 = { version = "0.23", optional = true, features = ["abi3-py39", "auto-initialize"] }
 arrow = "53"
 arrow-buffer = "53"
 rayon = "1.10"
@@ -48,6 +52,7 @@ xxhash-rust = { version = "0.8", features = ["xxh3"] }
 xz2 = "0.1"
 zstd = { version = "0.13", features = ["zstdmt"] }
 
+# Optional networking deps — enabled by the `remote` feature.
 # Optional networking deps — enabled by the `remote` feature.
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "http2"], optional = true }
 tokio = { version = "1.44", features = ["macros", "rt", "rt-multi-thread", "sync"], optional = true }

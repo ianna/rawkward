@@ -10,6 +10,7 @@
 //! counter, making it easy to reconstruct which position within each variant's
 //! content each union element refers to.
 
+<<<<<<< HEAD
 /// UnionArrays in awkward never have many variants in practice (usually
 /// ≤ 4, never anywhere near this). Keeping `current` on the stack up to
 /// this size avoids one heap allocation per call, which matters when these
@@ -45,6 +46,8 @@ where
     }
 }
 
+=======
+>>>>>>> origin/main
 /// Build a regular i64 index from i64 tags.
 ///
 /// # Examples
@@ -57,9 +60,19 @@ where
 /// union_array_regular_index_64(&mut idx, 2, &tags);
 /// assert_eq!(idx, [0, 0, 1, 1, 2]);
 /// ```
+<<<<<<< HEAD
 #[inline]
 pub fn union_array_regular_index_64(toindex: &mut [i64], size: usize, fromtags: &[i64]) {
     regular_index(toindex, size, fromtags);
+=======
+pub fn union_array_regular_index_64(toindex: &mut [i64], size: usize, fromtags: &[i64]) {
+    let mut current = vec![0i64; size];
+    for (i, &tag) in fromtags.iter().enumerate() {
+        let t = tag as usize;
+        toindex[i] = current[t];
+        current[t] += 1;
+    }
+>>>>>>> origin/main
 }
 
 /// Build a regular i64 index from i8 tags.
@@ -74,6 +87,7 @@ pub fn union_array_regular_index_64(toindex: &mut [i64], size: usize, fromtags: 
 /// union_array8_64_regular_index(&mut idx, 2, &tags);
 /// assert_eq!(idx, [0, 1, 0, 2]);
 /// ```
+<<<<<<< HEAD
 #[inline]
 pub fn union_array8_64_regular_index(toindex: &mut [i64], size: usize, fromtags: &[i8]) {
     regular_index(toindex, size, fromtags);
@@ -83,6 +97,25 @@ pub fn union_array8_64_regular_index(toindex: &mut [i64], size: usize, fromtags:
 #[inline]
 pub fn union_array8_32_regular_index(toindex: &mut [i32], size: usize, fromtags: &[i8]) {
     regular_index(toindex, size, fromtags);
+=======
+pub fn union_array8_64_regular_index(toindex: &mut [i64], size: usize, fromtags: &[i8]) {
+    let mut current = vec![0i64; size];
+    for (i, &tag) in fromtags.iter().enumerate() {
+        let t = tag as usize;
+        toindex[i] = current[t];
+        current[t] += 1;
+    }
+}
+
+/// Build a regular i32 index from i8 tags.
+pub fn union_array8_32_regular_index(toindex: &mut [i32], size: usize, fromtags: &[i8]) {
+    let mut current = vec![0i32; size];
+    for (i, &tag) in fromtags.iter().enumerate() {
+        let t = tag as usize;
+        toindex[i] = current[t];
+        current[t] += 1;
+    }
+>>>>>>> origin/main
 }
 
 #[cfg(test)]
@@ -120,6 +153,7 @@ mod tests {
         union_array8_32_regular_index(&mut idx, 2, &tags);
         assert_eq!(idx, [0, 0, 1]);
     }
+<<<<<<< HEAD
 
     #[test]
     fn fallback_when_size_exceeds_stack_limit() {
@@ -129,4 +163,6 @@ mod tests {
         union_array_regular_index_64(&mut idx, STACK_SIZE_LIMIT + 1, &tags);
         assert_eq!(idx, [0, 1, 2]);
     }
+=======
+>>>>>>> origin/main
 }
