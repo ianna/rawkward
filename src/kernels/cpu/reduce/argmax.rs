@@ -3,7 +3,6 @@
 
 //! Reduction kernel: index of the maximum element per group.
 //!
-<<<<<<< HEAD
 //! Corresponds to `src/cpu-kernels/awkward_reduce_argmax.cpp`. Offsets-
 //! based iteration: walk each group separately with the running best
 //! index/value held in registers, store once. No scatter into `toptr`,
@@ -39,38 +38,14 @@ where
             }
         }
         *slot = best_idx;
-=======
-//! Corresponds to `src/cpu-kernels/awkward_reduce_argmax.cpp`.
-
-/// For each group, find the index `i` of the maximum value.
-/// Groups with no elements retain `-1`.
-pub fn reduce_argmax<IN>(toptr: &mut [i64], fromptr: &[IN], parents: &[i64])
-where
-    IN: PartialOrd + Copy,
-{
-    assert_eq!(fromptr.len(), parents.len());
-    for v in toptr.iter_mut() {
-        *v = -1;
-    }
-    for (i, (&val, &p)) in fromptr.iter().zip(parents.iter()).enumerate() {
-        let best = toptr[p as usize];
-        if best == -1 || val > fromptr[best as usize] {
-            toptr[p as usize] = i as i64;
-        }
->>>>>>> origin/main
     }
 }
 
 macro_rules! impl_argmax {
     ($fn_name:ident, $t:ty) => {
-<<<<<<< HEAD
         #[inline]
         pub fn $fn_name(toptr: &mut [i64], fromptr: &[$t], offsets: &[i64]) {
             reduce_argmax(toptr, fromptr, offsets)
-=======
-        pub fn $fn_name(toptr: &mut [i64], fromptr: &[$t], parents: &[i64]) {
-            reduce_argmax(toptr, fromptr, parents)
->>>>>>> origin/main
         }
     };
 }
@@ -93,7 +68,6 @@ mod tests {
     #[test]
     fn basic() {
         let from = [3i32, 1, 5, 2];
-<<<<<<< HEAD
         let offsets = [0i64, 2, 4];
         let mut out = [0i64; 2];
         reduce_argmax_int32_64(&mut out, &from, &offsets);
@@ -106,20 +80,6 @@ mod tests {
         let offsets = [0i64, 0, 1]; // group 0 empty, group 1 has element 0
         let mut out = [0i64; 2];
         reduce_argmax_int64_64(&mut out, &from, &offsets);
-=======
-        let parents = [0i64, 0, 1, 1];
-        let mut out = [0i64; 2];
-        reduce_argmax_int32_64(&mut out, &from, &parents);
-        assert_eq!(out, [0, 2]); // index of max in each group
-    }
-
-    #[test]
-    fn empty_group_retains_minus_one() {
-        let from = [5i64];
-        let parents = [1i64]; // only group 1 has elements
-        let mut out = [0i64; 2];
-        reduce_argmax_int64_64(&mut out, &from, &parents);
->>>>>>> origin/main
         assert_eq!(out[0], -1);
         assert_eq!(out[1], 0);
     }

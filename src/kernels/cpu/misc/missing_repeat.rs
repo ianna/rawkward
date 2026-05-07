@@ -23,7 +23,6 @@
 /// // rep 1: [0+2, -1, 1+2] = [2, -1, 3]
 /// assert_eq!(out, [0, -1, 1, 2, -1, 3]);
 /// ```
-<<<<<<< HEAD
 #[inline]
 pub fn missing_repeat(outindex: &mut [i64], index: &[i64], repetitions: i64, regularsize: i64) {
     let indexlength = index.len();
@@ -37,26 +36,12 @@ pub fn missing_repeat(outindex: &mut [i64], index: &[i64], repetitions: i64, reg
         for (slot, &base) in dst.iter_mut().zip(index.iter()) {
             let mask = base >> 63; // -1 if base < 0, else 0
             *slot = base + (val_offset & !mask);
-=======
-pub fn missing_repeat(outindex: &mut [i64], index: &[i64], repetitions: i64, regularsize: i64) {
-    let indexlength = index.len() as i64;
-    for i in 0..repetitions {
-        let out_offset = (i * indexlength) as usize;
-        let val_offset = i * regularsize;
-        for j in 0..indexlength as usize {
-            let base = index[j];
-            let adjustment = if base >= 0 { val_offset } else { 0 };
-            outindex[out_offset + j] = base + adjustment;
->>>>>>> origin/main
         }
     }
 }
 
 /// Typed alias (mirrors `awkward_missing_repeat_64`).
-<<<<<<< HEAD
 #[inline]
-=======
->>>>>>> origin/main
 pub fn missing_repeat_64(outindex: &mut [i64], index: &[i64], repetitions: i64, regularsize: i64) {
     missing_repeat(outindex, index, repetitions, regularsize);
 }

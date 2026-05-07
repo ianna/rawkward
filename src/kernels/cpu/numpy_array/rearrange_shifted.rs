@@ -16,10 +16,7 @@
 ///
 /// Both `fromshifts` and `fromoffsets` are `i64` arrays; `toptr` is mutated
 /// in-place.
-<<<<<<< HEAD
 #[inline]
-=======
->>>>>>> origin/main
 pub fn numpy_array_rearrange_shifted(
     toptr: &mut [i64],
     fromshifts: &[i64],
@@ -28,15 +25,11 @@ pub fn numpy_array_rearrange_shifted(
     fromstarts: &[i64],
 ) {
     // Pass 1: add fromoffsets[i] to each element in the i-th segment.
-<<<<<<< HEAD
     // Slice-form lets the compiler vectorize the per-segment add.
-=======
->>>>>>> origin/main
     let mut k = 0usize;
     let nlists = fromoffsets.len().saturating_sub(1);
     for i in 0..nlists {
         let seg_len = (fromoffsets[i + 1] - fromoffsets[i]) as usize;
-<<<<<<< HEAD
         let off = fromoffsets[i];
         for slot in toptr[k..k + seg_len].iter_mut() {
             *slot += off;
@@ -48,20 +41,6 @@ pub fn numpy_array_rearrange_shifted(
         let start = fromstarts[parent as usize];
         let idx = *slot as usize;
         *slot += fromshifts[idx] - start;
-=======
-        for _ in 0..seg_len {
-            toptr[k] += fromoffsets[i];
-            k += 1;
-        }
-    }
-    // Pass 2: apply shifts and de-start.
-    let length = fromparents.len();
-    for i in 0..length {
-        let parent = fromparents[i] as usize;
-        let start = fromstarts[parent];
-        let idx = toptr[i] as usize;
-        toptr[i] += fromshifts[idx] - start;
->>>>>>> origin/main
     }
 }
 
