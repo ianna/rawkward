@@ -10,10 +10,7 @@
 /// * Zero-fill the remaining `target - count` positions.
 ///
 /// `toptr` must have length `(offsetslength - 1) * target`.
-<<<<<<< HEAD
 #[inline]
-=======
->>>>>>> origin/main
 pub fn numpy_array_pad_zero_to_length<T: Copy + Default>(
     fromptr: &[T],
     fromoffsets: &[i64],
@@ -28,15 +25,8 @@ pub fn numpy_array_pad_zero_to_length<T: Copy + Default>(
         let dest = k * target;
         // copy content
         toptr[dest..dest + count].copy_from_slice(&fromptr[start..end]);
-<<<<<<< HEAD
         // zero-pad remainder — `fill` compiles to memset for trivially-Copy types
         toptr[dest + count..dest + target].fill(T::default());
-=======
-        // zero-pad remainder
-        for v in toptr[dest + count..dest + target].iter_mut() {
-            *v = T::default();
-        }
->>>>>>> origin/main
     }
 }
 
