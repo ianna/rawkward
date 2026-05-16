@@ -1,23 +1,32 @@
 name: Rust
-
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-
 env:
   CARGO_TERM_COLOR: always
-
 jobs:
   verify:
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Check out awkward-cpp headers
+        uses: actions/checkout@v4
+        with:
+          repository: scikit-hep/awkward
+          ref: main
+          path: awkward-src
+          sparse-checkout: |
+            awkward-cpp/include
+          sparse-checkout-cone-mode: false
+
+      - name: Set AWKWARD_CPP_PATH
+        run: echo "AWKWARD_CPP_PATH=$GITHUB_WORKSPACE/awkward-src/awkward-cpp" >> $GITHUB_ENV
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
@@ -49,16 +58,15 @@ jobs:
       - name: Build and Test Rust Core
         shell: bash -leo pipefail {0}
         run: |
-          # We run cargo test within the mamba shell so it can find Python libs
           cargo test --no-default-features --lib
 
       - name: Build Python Extension (MVP)
         shell: bash -leo pipefail {0}
         run: |
-          # This compiles the Rust code into a Python-importable module
           python -m maturin develop --features python
 
       - name: Run Python API Tests
         shell: bash -leo pipefail {0}
         run: |
           python -m pytest tests/test_rawkward.py
+
