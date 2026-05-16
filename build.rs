@@ -47,10 +47,9 @@ fn detect_hip() -> bool {
         .map(|o| o.status.success())
         .unwrap_or(false);
 
-    let rocm_lib_exists =
-        Path::new("/opt/rocm/lib").exists()
-            || Path::new("/opt/rocm-7.2.1/lib").exists()
-            || Path::new("/opt/rocm-7.1.0/lib").exists();
+    let rocm_lib_exists = Path::new("/opt/rocm/lib").exists()
+        || Path::new("/opt/rocm-7.2.1/lib").exists()
+        || Path::new("/opt/rocm-7.1.0/lib").exists();
 
     hipcc_exists && rocm_lib_exists
 }
@@ -111,7 +110,9 @@ fn compile_hip_kernels() {
 }
 
 fn collect_hip_files(dir: &str, out: &mut Vec<String>) {
-    let Ok(entries) = fs::read_dir(dir) else { return };
+    let Ok(entries) = fs::read_dir(dir) else {
+        return;
+    };
     for entry in entries.flatten() {
         let path = entry.path();
         if path.is_dir() {
