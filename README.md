@@ -1,4 +1,6 @@
-# <img src="docs/images/rust-reverted-logo.svg"> Яawkward
+# <img src="docs/images/rust-reverted-logo.svg"> 
+
+# Яawkward
 
 _Rust-backed engine for nested, variable-length, columnar data_
 
@@ -10,7 +12,7 @@ Our mission is to forge a high-performance, Rust-based engine that remains 100% 
 
 ---
 
-### 🛠️ The Foundry Approach
+### The Foundry Approach
 
 #### 1. Zero-Friction Portability
 We replicate current kernel structures exactly to ensure **"plug-and-play"** compatibility. 
