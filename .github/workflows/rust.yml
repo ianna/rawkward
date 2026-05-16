@@ -32,6 +32,7 @@ jobs:
           create-args: >-
             python=3.13
             pip
+            nox
 
       - name: Install dependencies
         shell: bash -leo pipefail {0}
@@ -44,12 +45,12 @@ jobs:
           git clone --recursive --branch v2.9.0 --depth 1 \
             https://github.com/scikit-hep/awkward.git /tmp/awkward
           cd /tmp/awkward
-          python dev/generate-kernel-signatures.py
+          nox -s prepare
           python -m pip install -v ./awkward-cpp
           python -m pip install -e .
 
       - name: Set AWKWARD_CPP_PATH
-        run: echo "AWKWARD_CPP_PATH=/tmp/awkward/awkward-cpp" >> $GITHUB_ENV
+        run: echo "AWKWARD_CPP_PATH=/tmp/awkward/awkward-cpp/include" >> $GITHUB_ENV
 
       - name: Check formatting
         shell: bash -leo pipefail {0}
