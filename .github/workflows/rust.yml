@@ -32,7 +32,6 @@ jobs:
           create-args: >-
             python=3.13
             pip
-            nox
 
       - name: Install dependencies
         shell: bash -leo pipefail {0}
@@ -45,15 +44,12 @@ jobs:
           git clone --recursive --branch v2.9.0 --depth 1 \
             https://github.com/scikit-hep/awkward.git /tmp/awkward
           cd /tmp/awkward
-          nox -s prepare
+          python dev/generate-kernel-signatures.py
           python -m pip install -v ./awkward-cpp
           python -m pip install -e .
 
       - name: Set AWKWARD_CPP_PATH
-        shell: bash -leo pipefail {0}
-        run: |
-          AWKWARD_CPP_PATH=$(python -c "import awkward_cpp, os; print(os.path.dirname(awkward_cpp.__file__))")
-          echo "AWKWARD_CPP_PATH=$AWKWARD_CPP_PATH" >> $GITHUB_ENV
+        run: echo "AWKWARD_CPP_PATH=/tmp/awkward/awkward-cpp" >> $GITHUB_ENV
 
       - name: Check formatting
         shell: bash -leo pipefail {0}
@@ -66,11 +62,13 @@ jobs:
       - name: Build and Test Rust Core
         shell: bash -leo pipefail {0}
         run: |
+          # We run cargo test within the mamba shell so it can find Python libs
           cargo test --no-default-features --lib
 
       - name: Build Python Extension (MVP)
         shell: bash -leo pipefail {0}
         run: |
+          # This compiles the Rust code into a Python-importable module
           python -m maturin develop --features python
 
       - name: Run Python API Tests
