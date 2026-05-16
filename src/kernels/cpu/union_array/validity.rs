@@ -30,7 +30,7 @@ use crate::kernels::cpu::error::KernelError;
 /// # Examples
 ///
 /// ```
-/// use cpu_kernels::union_array_validity::union_array_validity_8_64;
+/// use kernels::cpu::union_array::validity;
 ///
 /// let tags        = [0i8, 1, 0];
 /// let index       = [0i64, 0, 1];

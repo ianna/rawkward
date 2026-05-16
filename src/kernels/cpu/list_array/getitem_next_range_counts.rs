@@ -11,7 +11,7 @@
 /// # Examples
 ///
 /// ```
-/// use cpu_kernels::list_array_getitem_next_range_counts::list_array64_getitem_next_range_counts_64;
+/// use kernels::cpu::list_array::getitem_next_range_counts::list_array64_getitem_next_range_counts_64;
 ///
 /// let offsets = [0i64, 3, 5, 8];
 /// assert_eq!(list_array64_getitem_next_range_counts_64(&offsets, 3), 8);

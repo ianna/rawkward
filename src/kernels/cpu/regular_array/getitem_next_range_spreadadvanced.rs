@@ -12,7 +12,7 @@
 /// # Examples
 ///
 /// ```
-/// use cpu_kernels::regular_array_getitem_next_range_spreadadvanced::regular_array_getitem_next_range_spreadadvanced_64;
+/// use kernels::cpu::regular_array::getitem_next_range_spreadadvanced::regular_array_getitem_next_range_spreadadvanced_64;
 ///
 /// // 2 rows; nextsize=3; fromadvanced=[7, 9]
 /// let fromadvanced = [7i64, 9];

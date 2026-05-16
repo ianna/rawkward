@@ -10,7 +10,7 @@
 /// # Examples
 ///
 /// ```
-/// use cpu_kernels::indexed_array_fill_count::indexed_array_fill_to64_count;
+/// use kernels::cpu::index::indexed_fill_count::indexed_array_fill_to64_count;
 ///
 /// let mut to = [0i64; 6];
 /// indexed_array_fill_to64_count(&mut to, 2, 3, 10);

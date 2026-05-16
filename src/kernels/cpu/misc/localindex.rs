@@ -22,7 +22,7 @@
 /// # Examples
 ///
 /// ```
-/// use cpu_kernels::localindex::localindex_64;
+/// use kernels::cpu::misc::localindex;
 ///
 /// let mut idx = [0i64; 5];
 /// localindex_64(&mut idx);
