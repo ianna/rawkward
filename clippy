@@ -1,0 +1,919 @@
+    Checking rawkward v0.1.0 (/Users/yana/Projects/rawkward/rawkward)
+error: unnecessary `>= y + 1` or `x - 1 >=`
+  --> src/kernels/cpu/record_array/reduce_nonlocal_outoffsets.rs:21:13
+   |
+21 |     assert!(outoffsets.len() >= outlength + 1);
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: change it to: `outoffsets.len() > outlength`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#int_plus_one
+   = note: `-D clippy::int-plus-one` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::int_plus_one)]`
+
+error: unnecessary `>= y + 1` or `x - 1 >=`
+  --> src/kernels/cpu/record_array/reduce_nonlocal_outoffsets.rs:22:13
+   |
+22 |     assert!(outcarry.len()  >= outlength + 1);
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: change it to: `outcarry.len() > outlength`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#int_plus_one
+
+error: the loop variable `i` is used to index `toindex`
+  --> src/kernels/cpu/index/indexed_numnull_unique.rs:33:14
+   |
+33 |     for i in 0..lenindex {
+   |              ^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#needless_range_loop
+   = note: `-D clippy::needless-range-loop` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::needless_range_loop)]`
+help: consider using an iterator and enumerate()
+   |
+33 -     for i in 0..lenindex {
+33 +     for (i, <item>) in toindex.iter_mut().enumerate().take(lenindex) {
+   |
+
+error: the loop variable `j` is only used to index `index`
+  --> src/kernels/cpu/index/indexed_ranges_carry_next.rs:51:18
+   |
+51 |         for j in start..stop {
+   |                  ^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#needless_range_loop
+help: consider using an iterator
+   |
+51 -         for j in start..stop {
+51 +         for <item> in index.iter().take(stop).skip(start) {
+   |
+
+error: the loop variable `j` is only used to index `index`
+  --> src/kernels/cpu/index/indexed_ranges_next.rs:57:18
+   |
+57 |         for j in start..stop {
+   |                  ^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#needless_range_loop
+help: consider using an iterator
+   |
+57 -         for j in start..stop {
+57 +         for <item> in index.iter().take(stop).skip(start) {
+   |
+
+error: doc list item overindented
+  --> src/kernels/cpu/index/indexed_reduce_next_fix_offsets.rs:21:5
+   |
+21 | ///                      final entry).
+   |     ^^^^^^^^^^^^^^^^^^^^^ help: try using `  ` (2 spaces)
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#doc_overindented_list_items
+   = note: `-D clippy::doc-overindented-list-items` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::doc_overindented_list_items)]`
+
+error: doc list item overindented
+  --> src/kernels/cpu/index/indexed_unique_next_index_and_offsets.rs:26:5
+   |
+26 | ///                    entries plus one null per group that needs one.
+   |     ^^^^^^^^^^^^^^^^^^^ help: try using `  ` (2 spaces)
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#doc_overindented_list_items
+
+error: doc list item overindented
+  --> src/kernels/cpu/index/indexed_unique_next_index_and_offsets.rs:30:5
+   |
+30 | ///                    running `k` counter, i.e. it runs over the *output*
+   |     ^^^^^^^^^^^^^^^^^^^ help: try using `  ` (2 spaces)
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#doc_overindented_list_items
+
+error: doc list item overindented
+  --> src/kernels/cpu/index/indexed_unique_next_index_and_offsets.rs:31:5
+   |
+31 | ///                    positions.
+   |     ^^^^^^^^^^^^^^^^^^^ help: try using `  ` (2 spaces)
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#doc_overindented_list_items
+
+error: doc list item overindented
+  --> src/kernels/cpu/list_array/combinations.rs:22:5
+   |
+22 | ///                   of each combination.
+   |     ^^^^^^^^^^^^^^^^^^ help: try using `  ` (2 spaces)
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#doc_overindented_list_items
+
+error: writing `&mut Vec` instead of `&mut [_]` involves a new object where a slice will do
+  --> src/kernels/cpu/list_array/combinations.rs:47:14
+   |
+47 |     tocarry: &mut Vec<Vec<i64>>,
+   |              ^^^^^^^^^^^^^^^^^^ help: change this to: `&mut [Vec<i64>]`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#ptr_arg
+   = note: `-D clippy::ptr-arg` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::ptr_arg)]`
+
+error: writing `&mut Vec` instead of `&mut [_]` involves a new object where a slice will do
+  --> src/kernels/cpu/list_array/combinations.rs:48:14
+   |
+48 |     toindex: &mut Vec<usize>,
+   |              ^^^^^^^^^^^^^^^ help: change this to: `&mut [usize]`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#ptr_arg
+
+error: this function has too many arguments (9/7)
+  --> src/kernels/cpu/list_array/getitem_jagged_apply.rs:27:1
+   |
+27 | / pub fn list_array_getitem_jagged_apply<C>(
+28 | |     tooffsets: &mut [i64],
+29 | |     tocarry: &mut [i64],
+30 | |     slicestarts: &[i64],
+...  |
+38 | | where
+39 | |     C: Copy + Into<i64>,
+   | |________________________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: `-D clippy::too-many-arguments` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::too_many_arguments)]`
+
+error: this function has too many arguments (9/7)
+   --> src/kernels/cpu/list_array/getitem_jagged_apply.rs:93:1
+    |
+ 93 | / pub fn list_array32_getitem_jagged_apply_64(
+ 94 | |     tooffsets: &mut [i64],
+ 95 | |     tocarry: &mut [i64],
+ 96 | |     slicestarts: &[i64],
+...   |
+102 | |     contentlen: i64,
+103 | | ) -> Result<(), KernelError> {
+    | |____________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+
+error: this function has too many arguments (9/7)
+   --> src/kernels/cpu/list_array/getitem_jagged_apply.rs:116:1
+    |
+116 | / pub fn list_array_u32_getitem_jagged_apply_64(
+117 | |     tooffsets: &mut [i64],
+118 | |     tocarry: &mut [i64],
+119 | |     slicestarts: &[i64],
+...   |
+125 | |     contentlen: i64,
+126 | | ) -> Result<(), KernelError> {
+    | |____________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+
+error: this function has too many arguments (9/7)
+   --> src/kernels/cpu/list_array/getitem_jagged_apply.rs:139:1
+    |
+139 | / pub fn list_array64_getitem_jagged_apply_64(
+140 | |     tooffsets: &mut [i64],
+141 | |     tocarry: &mut [i64],
+142 | |     slicestarts: &[i64],
+...   |
+148 | |     contentlen: i64,
+149 | | ) -> Result<(), KernelError> {
+    | |____________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+
+error: doc list item overindented
+  --> src/kernels/cpu/list_offset/argsort_strings.rs:21:5
+   |
+21 | ///                    non-decreasing.
+   |     ^^^^^^^^^^^^^^^^^^^ help: try using `  ` (2 spaces)
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#doc_overindented_list_items
+
+error: this function has too many arguments (8/7)
+  --> src/kernels/cpu/list_offset/argsort_strings.rs:44:1
+   |
+44 | / pub fn list_offset_array_argsort_strings(
+45 | |     tocarry: &mut [i64],
+46 | |     fromparents: &[i64],
+47 | |     stringdata: &[u8],
+...  |
+52 | |     is_local: bool,
+53 | | ) {
+   | |_^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+
+error: the loop variable `i` is used to index `fromparents`
+   --> src/kernels/cpu/list_offset/argsort_strings.rs:102:14
+    |
+102 |     for i in 0..=length {
+    |              ^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#needless_range_loop
+help: consider using an iterator and enumerate()
+    |
+102 -     for i in 0..=length {
+102 +     for (i, <item>) in fromparents.iter().enumerate().take(length + 1) {
+    |
+
+error: this `if` statement can be collapsed
+   --> src/kernels/cpu/list_offset/argsort_strings.rs:104:9
+    |
+104 | /         if i == length || new_parent != last_parent {
+105 | |             if !group.is_empty() {
+106 | |                 flush(
+107 | |                     &mut group,
+...   |
+116 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+104 ~         if (i == length || new_parent != last_parent) {
+105 ~             && !group.is_empty() {
+106 |                 flush(
+...
+114 |                 );
+115 ~             }
+    |
+
+error: this function has too many arguments (8/7)
+  --> src/kernels/cpu/list_offset/reduce_nonlocal_nextshifts.rs:30:1
+   |
+30 | / pub fn list_offset_array_reduce_nonlocal_nextshifts_64(
+31 | |     nummissing: &mut [i64],
+32 | |     missing: &mut [i64],
+33 | |     nextshifts: &mut [i64],
+...  |
+38 | |     nextcarry: &[i64],
+39 | | ) {
+   | |_^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+
+error: the loop variable `k` is only used to index `nummissing`
+  --> src/kernels/cpu/list_offset/reduce_nonlocal_nextshifts.rs:51:22
+   |
+51 |             for k in 0..maxcount {
+   |                      ^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#needless_range_loop
+help: consider using an iterator
+   |
+51 -             for k in 0..maxcount {
+51 +             for <item> in nummissing.iter_mut().take(maxcount) {
+   |
+
+error: the loop variable `k` is only used to index `nummissing`
+  --> src/kernels/cpu/list_offset/reduce_nonlocal_nextshifts.rs:57:18
+   |
+57 |         for k in count..maxcount {
+   |                  ^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#needless_range_loop
+help: consider using an iterator
+   |
+57 -         for k in count..maxcount {
+57 +         for <item> in nummissing.iter_mut().take(maxcount).skip(count) {
+   |
+
+error: it looks like you're manually copying between slices
+  --> src/kernels/cpu/list_offset/reduce_nonlocal_nextshifts.rs:62:9
+   |
+62 | /         for j in 0..count {
+63 | |             missing[start + j] = nummissing[j];
+64 | |         }
+   | |_________^ help: try replacing the loop by: `missing[start..(count + start)].copy_from_slice(&nummissing[..count]);`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#manual_memcpy
+   = note: `-D clippy::manual-memcpy` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::manual_memcpy)]`
+
+error: the loop variable `i` is used to index `distincts`
+  --> src/kernels/cpu/list_offset/reduce_nonlocal_outstartsstops.rs:41:14
+   |
+41 |     for i in 0..lendistincts {
+   |              ^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#needless_range_loop
+help: consider using an iterator and enumerate()
+   |
+41 -     for i in 0..lendistincts {
+41 +     for (i, <item>) in distincts.iter().enumerate().take(lendistincts) {
+   |
+
+error: doc list item overindented
+  --> src/kernels/cpu/list_offset/reduce_nonlocal_preparenext.rs:23:5
+   |
+23 | ///                        `distinctslen`.  Initialised to `-1` on entry.
+   |     ^^^^^^^^^^^^^^^^^^^^^^^ help: try using `  ` (2 spaces)
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#doc_overindented_list_items
+
+error: this function has too many arguments (8/7)
+  --> src/kernels/cpu/list_offset/reduce_nonlocal_preparenext.rs:32:1
+   |
+32 | / pub fn list_offset_array_reduce_nonlocal_preparenext_64(
+33 | |     nextcarry: &mut [i64],
+34 | |     nextparents: &mut [i64],
+35 | |     distincts: &mut [i64],
+...  |
+40 | |     maxcount: i64,
+41 | | ) -> i64 {
+   | |________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+
+error: doc list item overindented
+  --> src/kernels/cpu/mask/bitmasked_to_bytemasked.rs:20:5
+   |
+20 | ///                    "this element is valid".
+   |     ^^^^^^^^^^^^^^^^^^^ help: try using `  ` (2 spaces)
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#doc_overindented_list_items
+
+error: doc list item overindented
+  --> src/kernels/cpu/mask/bitmasked_to_bytemasked.rs:22:5
+   |
+22 | ///                    corresponds to the first element.  When `false` the
+   |     ^^^^^^^^^^^^^^^^^^^ help: try using `  ` (2 spaces)
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#doc_overindented_list_items
+
+error: doc list item overindented
+  --> src/kernels/cpu/mask/bitmasked_to_bytemasked.rs:23:5
+   |
+23 | ///                    most-significant bit does.
+   |     ^^^^^^^^^^^^^^^^^^^ help: try using `  ` (2 spaces)
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#doc_overindented_list_items
+
+error: doc list item overindented
+  --> src/kernels/cpu/mask/bytemasked_getitem_nextcarry.rs:17:5
+   |
+17 | ///                 returned `usize` (the count of valid elements) entries are
+   |     ^^^^^^^^^^^^^^^^ help: try using `  ` (2 spaces)
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#doc_overindented_list_items
+
+error: doc list item overindented
+  --> src/kernels/cpu/mask/bytemasked_getitem_nextcarry.rs:18:5
+   |
+18 | ///                 written.
+   |     ^^^^^^^^^^^^^^^^ help: try using `  ` (2 spaces)
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#doc_overindented_list_items
+
+error: doc list item overindented
+  --> src/kernels/cpu/mask/bytemasked_getitem_nextcarry.rs:21:5
+   |
+21 | ///                 position as valid.
+   |     ^^^^^^^^^^^^^^^^ help: try using `  ` (2 spaces)
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#doc_overindented_list_items
+
+error: doc list item overindented
+  --> src/kernels/cpu/mask/bytemasked_getitem_nextcarry_outindex.rs:23:5
+   |
+23 | ///                 elements.
+   |     ^^^^^^^^^^^^^^^^ help: try using `  ` (2 spaces)
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#doc_overindented_list_items
+
+error: consider using `sort`
+  --> src/kernels/cpu/numpy_array/sort_asstrings_uint8.rs:29:24
+   |
+29 |         if ascending { words.sort_by(|a, b| a.cmp(b)); }
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `words.sort()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#unnecessary_sort_by
+   = note: `-D clippy::unnecessary-sort-by` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::unnecessary_sort_by)]`
+
+error: consider using `sort_unstable`
+  --> src/kernels/cpu/numpy_array/sort_asstrings_uint8.rs:32:9
+   |
+32 |         words.sort_unstable_by(|a, b| a.cmp(b));
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `words.sort_unstable()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#unnecessary_sort_by
+
+error: inequality checks against false are unnecessary
+  --> src/kernels/cpu/numpy_array/subrange_equal.rs:61:25
+   |
+61 |                     if (tmpptr[fromstarts[i] as usize + j] != false) !=
+   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `tmpptr[fromstarts[i] as usize + j]`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#bool_comparison
+   = note: `-D clippy::bool-comparison` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::bool_comparison)]`
+
+error: inequality checks against false are unnecessary
+  --> src/kernels/cpu/numpy_array/subrange_equal.rs:62:25
+   |
+62 |                        (tmpptr[fromstarts[ii] as usize + j] != false) {
+   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `tmpptr[fromstarts[ii] as usize + j]`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#bool_comparison
+
+error: the variable `k` is used as a loop counter
+  --> src/kernels/cpu/numpy_array/unique_strings_uint8.rs:33:13
+   |
+33 |             for j in offsets[i] as usize..offsets[i + 1] as usize {
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `for (k, j) in (offsets[i] as usize..offsets[i + 1] as usize).enumerate()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#explicit_counter_loop
+   = note: `-D clippy::explicit-counter-loop` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::explicit_counter_loop)]`
+
+error: the loop variable `idx` is only used to index `outcarry`
+  --> src/kernels/cpu/record_array/reduce_nonlocal_outoffsets.rs:56:16
+   |
+56 |     for idx in 0..=outlength {
+   |                ^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#needless_range_loop
+help: consider using an iterator
+   |
+56 -     for idx in 0..=outlength {
+56 +     for <item> in outcarry.iter_mut().take(outlength + 1) {
+   |
+
+error: writing `&mut Vec` instead of `&mut [_]` involves a new object where a slice will do
+  --> src/kernels/cpu/regular_array/combinations.rs:42:14
+   |
+42 |     tocarry: &mut Vec<Vec<i64>>,
+   |              ^^^^^^^^^^^^^^^^^^ help: change this to: `&mut [Vec<i64>]`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#ptr_arg
+
+error: writing `&mut Vec` instead of `&mut [_]` involves a new object where a slice will do
+  --> src/kernels/cpu/regular_array/combinations.rs:43:14
+   |
+43 |     toindex: &mut Vec<usize>,
+   |              ^^^^^^^^^^^^^^^ help: change this to: `&mut [usize]`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#ptr_arg
+
+error: the loop variable `i` is used to index `tocarry`
+  --> src/kernels/cpu/regular_array/getitem_next_at.rs:42:14
+   |
+42 |     for i in 0..length {
+   |              ^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#needless_range_loop
+help: consider using an iterator and enumerate()
+   |
+42 -     for i in 0..length {
+42 +     for (i, <item>) in tocarry.iter_mut().enumerate().take(length) {
+   |
+
+error: the loop variable `i` is used to index `parents`
+  --> src/kernels/cpu/regular_array/reduce_nonlocal_preparenext.rs:45:18
+   |
+45 |         for i in 0..length {
+   |                  ^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#needless_range_loop
+help: consider using an iterator and enumerate()
+   |
+45 -         for i in 0..length {
+45 +         for (i, <item>) in parents.iter().enumerate().take(length) {
+   |
+
+error: this function has too many arguments (10/7)
+  --> src/kernels/cpu/union_array/simplify.rs:12:1
+   |
+12 | / pub fn union_array_simplify<OT, OI, IT, II>(
+13 | |     totags: &mut [i8],
+14 | |     toindex: &mut [i64],
+15 | |     outertags: &[OT],
+...  |
+26 | |     IT: Copy + Into<i64>,
+27 | |     II: Copy + Into<i64>,
+   | |_________________________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+
+error: this function has too many arguments (10/7)
+  --> src/kernels/cpu/union_array/simplify.rs:42:9
+   |
+42 | /         pub fn $fn_name(
+43 | |             totags: &mut [i8],
+44 | |             toindex: &mut [i64],
+45 | |             outertags: &[$ot],
+...  |
+52 | |             base: i64,
+53 | |         ) {
+   | |_________^
+...
+62 |   impl_simplify!(union_array8_32_simplify8_32_to8_64, i8, i32, i8, i32);
+   |   --------------------------------------------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_simplify` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (10/7)
+  --> src/kernels/cpu/union_array/simplify.rs:42:9
+   |
+42 | /         pub fn $fn_name(
+43 | |             totags: &mut [i8],
+44 | |             toindex: &mut [i64],
+45 | |             outertags: &[$ot],
+...  |
+52 | |             base: i64,
+53 | |         ) {
+   | |_________^
+...
+63 |   impl_simplify!(union_array8_32_simplify8_u32_to8_64, i8, i32, i8, u32);
+   |   ---------------------------------------------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_simplify` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (10/7)
+  --> src/kernels/cpu/union_array/simplify.rs:42:9
+   |
+42 | /         pub fn $fn_name(
+43 | |             totags: &mut [i8],
+44 | |             toindex: &mut [i64],
+45 | |             outertags: &[$ot],
+...  |
+52 | |             base: i64,
+53 | |         ) {
+   | |_________^
+...
+64 |   impl_simplify!(union_array8_32_simplify8_64_to8_64, i8, i32, i8, i64);
+   |   --------------------------------------------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_simplify` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (10/7)
+  --> src/kernels/cpu/union_array/simplify.rs:42:9
+   |
+42 | /         pub fn $fn_name(
+43 | |             totags: &mut [i8],
+44 | |             toindex: &mut [i64],
+45 | |             outertags: &[$ot],
+...  |
+52 | |             base: i64,
+53 | |         ) {
+   | |_________^
+...
+65 |   impl_simplify!(union_array8_u32_simplify8_32_to8_64, i8, u32, i8, i32);
+   |   ---------------------------------------------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_simplify` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (10/7)
+  --> src/kernels/cpu/union_array/simplify.rs:42:9
+   |
+42 | /         pub fn $fn_name(
+43 | |             totags: &mut [i8],
+44 | |             toindex: &mut [i64],
+45 | |             outertags: &[$ot],
+...  |
+52 | |             base: i64,
+53 | |         ) {
+   | |_________^
+...
+66 |   impl_simplify!(union_array8_u32_simplify8_u32_to8_64, i8, u32, i8, u32);
+   |   ----------------------------------------------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_simplify` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (10/7)
+  --> src/kernels/cpu/union_array/simplify.rs:42:9
+   |
+42 | /         pub fn $fn_name(
+43 | |             totags: &mut [i8],
+44 | |             toindex: &mut [i64],
+45 | |             outertags: &[$ot],
+...  |
+52 | |             base: i64,
+53 | |         ) {
+   | |_________^
+...
+67 |   impl_simplify!(union_array8_u32_simplify8_64_to8_64, i8, u32, i8, i64);
+   |   ---------------------------------------------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_simplify` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (10/7)
+  --> src/kernels/cpu/union_array/simplify.rs:42:9
+   |
+42 | /         pub fn $fn_name(
+43 | |             totags: &mut [i8],
+44 | |             toindex: &mut [i64],
+45 | |             outertags: &[$ot],
+...  |
+52 | |             base: i64,
+53 | |         ) {
+   | |_________^
+...
+68 |   impl_simplify!(union_array8_64_simplify8_32_to8_64, i8, i64, i8, i32);
+   |   --------------------------------------------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_simplify` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (10/7)
+  --> src/kernels/cpu/union_array/simplify.rs:42:9
+   |
+42 | /         pub fn $fn_name(
+43 | |             totags: &mut [i8],
+44 | |             toindex: &mut [i64],
+45 | |             outertags: &[$ot],
+...  |
+52 | |             base: i64,
+53 | |         ) {
+   | |_________^
+...
+69 |   impl_simplify!(union_array8_64_simplify8_u32_to8_64, i8, i64, i8, u32);
+   |   ---------------------------------------------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_simplify` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (10/7)
+  --> src/kernels/cpu/union_array/simplify.rs:42:9
+   |
+42 | /         pub fn $fn_name(
+43 | |             totags: &mut [i8],
+44 | |             toindex: &mut [i64],
+45 | |             outertags: &[$ot],
+...  |
+52 | |             base: i64,
+53 | |         ) {
+   | |_________^
+...
+70 |   impl_simplify!(union_array8_64_simplify8_64_to8_64, i8, i64, i8, i64);
+   |   --------------------------------------------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_simplify` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: module has the same name as its containing module
+ --> src/kernels/cpu/sort/mod.rs:9:1
+  |
+9 | pub mod sort;
+  | ^^^^^^^^^^^^^
+  |
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#module_inception
+  = note: `-D clippy::module-inception` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(clippy::module_inception)]`
+
+error: this function has too many arguments (8/7)
+  --> src/kernels/cpu/sort/sort.rs:14:1
+   |
+14 | / pub fn sort<T>(
+15 | |     toptr: &mut [T],
+16 | |     fromptr: &[T],
+17 | |     length: usize,
+...  |
+23 | | ) where
+24 | |     T: ArgsortOrd + Copy,
+   | |_________________________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+
+error: this function has too many arguments (8/7)
+  --> src/kernels/cpu/sort/sort.rs:71:9
+   |
+71 | /         pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], length: usize,
+72 | |                         offsets: &[i64], offsetslength: usize, parentslength: usize,
+73 | |                         ascending: bool, stable: bool) {
+   | |______________________________________________________^
+...
+78 |   impl_sort_typed!(sort_bool,    bool);
+   |   ------------------------------------ in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_sort_typed` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (8/7)
+  --> src/kernels/cpu/sort/sort.rs:71:9
+   |
+71 | /         pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], length: usize,
+72 | |                         offsets: &[i64], offsetslength: usize, parentslength: usize,
+73 | |                         ascending: bool, stable: bool) {
+   | |______________________________________________________^
+...
+79 |   impl_sort_typed!(sort_int8,    i8);
+   |   ---------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_sort_typed` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (8/7)
+  --> src/kernels/cpu/sort/sort.rs:71:9
+   |
+71 | /         pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], length: usize,
+72 | |                         offsets: &[i64], offsetslength: usize, parentslength: usize,
+73 | |                         ascending: bool, stable: bool) {
+   | |______________________________________________________^
+...
+80 |   impl_sort_typed!(sort_uint8,   u8);
+   |   ---------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_sort_typed` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (8/7)
+  --> src/kernels/cpu/sort/sort.rs:71:9
+   |
+71 | /         pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], length: usize,
+72 | |                         offsets: &[i64], offsetslength: usize, parentslength: usize,
+73 | |                         ascending: bool, stable: bool) {
+   | |______________________________________________________^
+...
+81 |   impl_sort_typed!(sort_int16,   i16);
+   |   ----------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_sort_typed` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (8/7)
+  --> src/kernels/cpu/sort/sort.rs:71:9
+   |
+71 | /         pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], length: usize,
+72 | |                         offsets: &[i64], offsetslength: usize, parentslength: usize,
+73 | |                         ascending: bool, stable: bool) {
+   | |______________________________________________________^
+...
+82 |   impl_sort_typed!(sort_uint16,  u16);
+   |   ----------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_sort_typed` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (8/7)
+  --> src/kernels/cpu/sort/sort.rs:71:9
+   |
+71 | /         pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], length: usize,
+72 | |                         offsets: &[i64], offsetslength: usize, parentslength: usize,
+73 | |                         ascending: bool, stable: bool) {
+   | |______________________________________________________^
+...
+83 |   impl_sort_typed!(sort_int32,   i32);
+   |   ----------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_sort_typed` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (8/7)
+  --> src/kernels/cpu/sort/sort.rs:71:9
+   |
+71 | /         pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], length: usize,
+72 | |                         offsets: &[i64], offsetslength: usize, parentslength: usize,
+73 | |                         ascending: bool, stable: bool) {
+   | |______________________________________________________^
+...
+84 |   impl_sort_typed!(sort_uint32,  u32);
+   |   ----------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_sort_typed` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (8/7)
+  --> src/kernels/cpu/sort/sort.rs:71:9
+   |
+71 | /         pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], length: usize,
+72 | |                         offsets: &[i64], offsetslength: usize, parentslength: usize,
+73 | |                         ascending: bool, stable: bool) {
+   | |______________________________________________________^
+...
+85 |   impl_sort_typed!(sort_int64,   i64);
+   |   ----------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_sort_typed` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (8/7)
+  --> src/kernels/cpu/sort/sort.rs:71:9
+   |
+71 | /         pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], length: usize,
+72 | |                         offsets: &[i64], offsetslength: usize, parentslength: usize,
+73 | |                         ascending: bool, stable: bool) {
+   | |______________________________________________________^
+...
+86 |   impl_sort_typed!(sort_uint64,  u64);
+   |   ----------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_sort_typed` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (8/7)
+  --> src/kernels/cpu/sort/sort.rs:71:9
+   |
+71 | /         pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], length: usize,
+72 | |                         offsets: &[i64], offsetslength: usize, parentslength: usize,
+73 | |                         ascending: bool, stable: bool) {
+   | |______________________________________________________^
+...
+87 |   impl_sort_typed!(sort_float32, f32);
+   |   ----------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_sort_typed` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many arguments (8/7)
+  --> src/kernels/cpu/sort/sort.rs:71:9
+   |
+71 | /         pub fn $fn_name(toptr: &mut [$t], fromptr: &[$t], length: usize,
+72 | |                         offsets: &[i64], offsetslength: usize, parentslength: usize,
+73 | |                         ascending: bool, stable: bool) {
+   | |______________________________________________________^
+...
+88 |   impl_sort_typed!(sort_float64, f64);
+   |   ----------------------------------- in this macro invocation
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_arguments
+   = note: this error originates in the macro `impl_sort_typed` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: the loop variable `i` is only used to index `fromoffsets`
+  --> src/kernels/cpu/unique/offsets.rs:25:14
+   |
+25 |     for i in 0..length {
+   |              ^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#needless_range_loop
+help: consider using an iterator
+   |
+25 -     for i in 0..length {
+25 +     for <item> in fromoffsets.iter().take(length) {
+   |
+
+error: attempt to mutate range bound within loop
+  --> src/kernels/cpu/unique/offsets.rs:30:17
+   |
+30 |                 j += 1;
+   |                 ^
+   |
+   = note: the range of the loop is unchanged
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#mut_range_bound
+   = note: `-D clippy::mut-range-bound` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::mut_range_bound)]`
+
+error: inequality checks against false are unnecessary
+  --> src/kernels/cpu/unique/ranges_bool.rs:27:17
+   |
+27 |             if (toptr[m - 1] != false) != (toptr[k] != false) {
+   |                 ^^^^^^^^^^^^^^^^^^^^^ help: try: `toptr[m - 1]`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#bool_comparison
+
+error: inequality checks against false are unnecessary
+  --> src/kernels/cpu/unique/ranges_bool.rs:27:44
+   |
+27 |             if (toptr[m - 1] != false) != (toptr[k] != false) {
+   |                                            ^^^^^^^^^^^^^^^^^ help: try: `toptr[k]`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#bool_comparison
+
+error: could not compile `rawkward` (lib) due to 71 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: the loop variable `i` is used to index `idx`
+  --> src/kernels/cpu/index/indexed_numnull_unique.rs:69:18
+   |
+69 |         for i in 0..n {
+   |                  ^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#needless_range_loop
+help: consider using an iterator and enumerate()
+   |
+69 -         for i in 0..n {
+69 +         for (i, <item>) in idx.iter().enumerate().take(n) {
+   |
+
+error: the loop variable `i` is used to index `index`
+   --> src/kernels/cpu/mask/bitmasked_to_indexedoption.rs:142:18
+    |
+142 |         for i in 0..8 {
+    |                  ^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#needless_range_loop
+help: consider using an iterator and enumerate()
+    |
+142 -         for i in 0..8 {
+142 +         for (i, <item>) in index.iter().enumerate().take(8) {
+    |
+
+error: used `assert_eq!` with a literal bool
+  --> src/kernels/cpu/reduce/sum_bool.rs:99:9
+   |
+99 |         assert_eq!(out[0], true);
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#bool_assert_comparison
+   = note: `-D clippy::bool-assert-comparison` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::bool_assert_comparison)]`
+help: replace it with `assert!(..)`
+   |
+99 -         assert_eq!(out[0], true);
+99 +         assert!(out[0]);
+   |
+
+error: could not compile `rawkward` (lib test) due to 74 previous errors

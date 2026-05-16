@@ -1,0 +1,44 @@
+[package]
+name = "rawkward"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Яawkward: A Rust-backed engine for nested, variable-length, columnar data"
+license = "BSD-3-Clause"
+authors = ["Ianna Osborne <ianna.osborne@cern.ch>"]
+
+[lib]
+name = "rawkward"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["python"]
+python = ["pyo3/extension-module"]
+bin_testing = ["pyo3/auto-initialize"]
+
+[dependencies]
+pyo3 = { version = "0.23", optional = true, features = ["abi3-py39"] }
+arrow = "53"
+arrow-buffer = "53"
+rayon = "1.10"
+thiserror = "1.0"
+
+# Compression ecosystem (mirroring awkward-array)
+flate2 = { version = "1.1", default-features = false, features = ["rust_backend"] }
+lz4_flex = "0.11"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+xz2 = "0.1"
+zstd = { version = "0.13", features = ["zstdmt"] }
+
+# Async + networking (optional — enable with the `remote` feature)
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "http2"], optional = true }
+tokio = { version = "1.44", features = ["macros", "rt", "rt-multi-thread", "sync"], optional = true }
+
+[dev-dependencies]
+proptest = "1.5"
+criterion = "0.5"
+
+[[example]]
+name = "basic_usage"
+required-features = ["bin_testing"] 
+test = false
