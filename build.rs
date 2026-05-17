@@ -309,3 +309,60 @@ fn generate_hip_bindings() {
         out_path.display()
     );
 }
+
+fn collect_hip_files(dir: &str, out: &mut Vec<String>) {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_hip_files(path.to_str().unwrap(), out);
+        } else if let Some(ext) = path.extension() {
+            if ext == "cpp" || ext == "hip" {
+                out.push(path.to_str().unwrap().to_string());
+            }
+        }
+    }
+}
+
+fn compile_awkward_bench_cxx() {
+    let awkward_cpp_path =
+        env::var("AWKWARD_CPP_PATH").unwrap_or_else(|_| "/usr/local".to_string());
+    let include = format!("{}/include", awkward_cpp_path);
+    let lib = format!("{}/lib", awkward_cpp_path);
+
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let obj = format!("{out_dir}/awkward_bench_wrappers.o");
+
+    let status = Command::new("c++")
+        .args([
+            "-O2",
+            "--std=c++17",
+            "-fPIC",
+            "-c",
+            &format!("-I{}", include),
+            "benches/awkward_bench_wrappers.cpp",
+            "-o",
+            &obj,
+        ])
+        .status()
+        .expect("Failed to run c++");
+    if !status.success() {
+        panic!("c++ failed to compile awkward_bench_wrappers.cpp");
+    }
+
+    let lib_out = format!("{out_dir}/libawkward_bench.a");
+    let status = Command::new("ar")
+        .args(["crus", &lib_out, &obj])
+        .status()
+        .expect("Failed to run ar");
+    if !status.success() {
+        panic!("ar failed to archive awkward_bench_wrappers");
+    }
+
+    println!("cargo:rustc-link-search=native={out_dir}");
+    println!("cargo:rustc-link-search=native={lib}");
+    println!("cargo:rustc-link-lib=static=awkward_bench");
+    println!("cargo:rustc-link-lib=dylib=awkward-cpp");
+}

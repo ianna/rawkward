@@ -53,6 +53,7 @@ zstd = { version = "0.13", features = ["zstdmt"] }
 # Optional networking deps — enabled by the `remote` feature.
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "http2"], optional = true }
 tokio = { version = "1.44", features = ["macros", "rt", "rt-multi-thread", "sync"], optional = true }
+kernels = "0.1.0"
 
 [build-dependencies]
 cc = "1.0"
