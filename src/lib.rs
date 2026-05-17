@@ -9,6 +9,7 @@ use crate::python::py_layout::{
 #[cfg(feature = "python")]
 use pyo3::prelude::*;
 
+pub mod backend;
 pub mod content;
 pub mod dtype;
 pub mod gpu;
