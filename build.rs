@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Ianna Osborne
+// SPDX-License-Identifier: BSD-3-Clause
+
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -25,6 +28,11 @@ fn main() {
         println!("cargo:warning=HIP feature enabled but ROCm not found — building CPU-only");
     }
 
+    // 2b. Generate HIP bindings for the Rust backend
+    if hip_feature && hip_available {
+        generate_hip_bindings();
+    }
+
     // 3. Optional C++ benchmark kernels
     if bench_cxx_feature {
         compile_awkward_bench_cxx();
@@ -48,13 +56,67 @@ fn detect_hip() -> bool {
         .unwrap_or(false);
 
     let rocm_lib_exists = Path::new("/opt/rocm/lib").exists()
-        || Path::new("/opt/rocm-7.2.1/lib").exists()
-        || Path::new("/opt/rocm-7.1.0/lib").exists();
+        || glob::glob("/opt/rocm-*/lib").unwrap().next().is_some();
 
     hipcc_exists && rocm_lib_exists
 }
 
 fn compile_hip_kernels() {
+    let hip_path = env::var("HIP_PATH")
+        .or_else(|_| env::var("ROCM_PATH"))
+        .unwrap_or_else(|_| "/opt/rocm".to_string());
+    let hip_include = format!("{}/include", hip_path);
+    let hip_lib = format!("{}/lib", hip_path);
+    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+
+    let mut hip_files: Vec<String> = Vec::new();
+    collect_hip_files("src/kernels/hip", &mut hip_files);
+    hip_files.sort();
+
+    if hip_files.is_empty() {
+        panic!("No .hip.cpp files found under src/kernels/hip/");
+    }
+
+    // Generate a unity translation unit so --genco can produce one output.
+    // --genco requires a single input when -o is specified.
+    let unity_path = out_dir.join("_all_hip_kernels.hip.cpp");
+    {
+        use std::io::Write;
+        let mut f = std::fs::File::create(&unity_path).unwrap();
+        for file in &hip_files {
+            let abs = std::fs::canonicalize(file).unwrap_or_else(|_| PathBuf::from(file));
+            writeln!(f, "#include \"{}\"", abs.display()).unwrap();
+        }
+    }
+
+    let hsaco_path = out_dir.join("rawkward_kernels.hsaco");
+    let status = Command::new("hipcc")
+        .args([
+            "--genco",
+            "-O3",
+            "--std=c++17",
+            &format!("-I{}", hip_include),
+        ])
+        .arg(&unity_path)
+        .args(["-o", hsaco_path.to_str().unwrap()])
+        .status()
+        .expect("hipcc --genco failed to launch");
+
+    if !status.success() {
+        panic!("hipcc --genco failed — check that all kernel sources compile cleanly");
+    }
+
+    // .hsaco is a proper HSA code object — works with both
+    // hipModuleLoad (path) and hipModuleLoadData (embedded bytes).
+    println!(
+        "cargo:rustc-env=RAWKWARD_HIP_MODULE_PATH={}",
+        hsaco_path.display()
+    );
+    println!("cargo:rustc-link-search=native={}", hip_lib);
+    println!("cargo:rustc-link-lib=dylib=amdhip64");
+}
+
+fn compile_hip_kernels_shared() {
     // Resolve HIP include/lib paths from env, falling back to /opt/rocm
     let hip_path = env::var("HIP_PATH")
         .or_else(|_| env::var("ROCM_PATH"))
@@ -103,9 +165,33 @@ fn compile_hip_kernels() {
         panic!("Failed to archive HIP kernels");
     }
 
-    println!("cargo:rustc-link-search=native={}", out_dir.display());
+    // Produce the runtime-loadable module for hipModuleLoadData.
+    //let hsaco_path = out_dir.join("rawkward_kernels.hsaco");
+    let module_path = out_dir.join("librawkward_kernels.so");
+    let mut cmd = Command::new("hipcc");
+    cmd.args([
+        "-O3",
+        "--std=c++17",
+        "-fPIC",
+        "-shared",
+        &format!("-I{}", hip_include),
+    ]);
+    for file in &hip_files {
+        cmd.arg(file);
+    }
+    cmd.args(["-o", module_path.to_str().unwrap()]);
+    if !cmd
+        .status()
+        .expect("hipcc -shared failed to launch")
+        .success()
+    {
+        panic!("hipcc -shared failed — check kernel sources compile cleanly");
+    }
+    println!(
+        "cargo:rustc-env=RAWKWARD_HIP_MODULE_PATH={}",
+        module_path.display()
+    );
     println!("cargo:rustc-link-search=native={}", hip_lib);
-    println!("cargo:rustc-link-lib=static=awkward_hip_kernels");
     println!("cargo:rustc-link-lib=dylib=amdhip64");
 }
 
@@ -164,4 +250,62 @@ fn compile_awkward_bench_cxx() {
     println!("cargo:rustc-link-search=native={lib}");
     println!("cargo:rustc-link-lib=static=awkward_bench");
     println!("cargo:rustc-link-lib=dylib=awkward-cpp");
+}
+
+fn generate_hip_bindings() {
+    use bindgen;
+
+    let hip_path = env::var("HIP_PATH")
+        .or_else(|_| env::var("ROCM_PATH"))
+        .unwrap_or_else(|_| "/opt/rocm".to_string());
+
+    let hip_include = format!("{}/include", hip_path);
+
+    let bindings = bindgen::Builder::default()
+        .header(format!("{}/hip/hip_runtime_api.h", hip_include))
+        .clang_arg(format!("-I{}", hip_include))
+        .clang_arg("-D__HIP_PLATFORM_AMD__=1")
+        // Only generate HIP symbols
+        .allowlist_function("hip.*")
+        .allowlist_type("hip.*")
+        .allowlist_var("hip.*")
+        // ROCm headers contain inline C++ → needed for bindgen 0.69
+        .clang_arg("-x")
+        .clang_arg("c++")
+        // Avoid layout tests (ROCm headers break them)
+        .layout_tests(false)
+        // Add allow attributes directly into generated file
+        .raw_line("pub mod hip_bindings {")
+        .raw_line("    #![allow(non_camel_case_types)]")
+        .raw_line("    #![allow(non_snake_case)]")
+        .raw_line("    #![allow(non_upper_case_globals)]")
+        .raw_line("    #![allow(dead_code)]")
+        .raw_line("    #![allow(unsafe_op_in_unsafe_fn)]")
+        .raw_line("    #![allow(improper_ctypes)]")
+        .raw_line("    #![allow(improper_ctypes_definitions)]")
+        .raw_line("    #![allow(clippy::all)]")
+        // This is the key: forces bindgen to mark all externs unsafe
+        .generate_inline_functions(true)
+        .trust_clang_mangling(false)
+        .use_core()
+        .generate()
+        .expect("Unable to generate HIP bindings");
+
+    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("hip_bindings.rs");
+
+    bindings
+        .write_to_file(&out_path)
+        .expect("Couldn't write HIP bindings");
+    {
+        use std::fs::OpenOptions;
+        use std::io::Write;
+
+        let mut f = OpenOptions::new().append(true).open(&out_path).unwrap();
+
+        writeln!(f, "}}").unwrap();
+    }
+    println!(
+        "cargo:rustc-env=RAWKWARD_HIP_BINDINGS={}",
+        out_path.display()
+    );
 }

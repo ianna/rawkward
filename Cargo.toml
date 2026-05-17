@@ -16,12 +16,9 @@ crate-type = ["cdylib", "rlib"]
 # which makes the linker use dynamic-lookup on macOS and weak symbols on
 # Linux — no libpython required at link time. This is what `maturin develop`
 # does, and it works the same on macOS, Linux CI, and Windows.
-# Default: build the Python extension. `python` uses pyo3/extension-module,
-# which makes the linker use dynamic-lookup on macOS and weak symbols on
-# Linux — no libpython required at link time. This is what `maturin develop`
-# does, and it works the same on macOS, Linux CI, and Windows.
 default = ["python"]
 python = ["dep:pyo3", "pyo3/extension-module"]
+hip = []
 
 # Opt-in for Rust binaries / tests that *embed* a Python interpreter
 # (e.g. `cargo test --features auto-initialize`). Requires libpython on
@@ -44,6 +41,7 @@ arrow = "53"
 arrow-buffer = "53"
 rayon = "1.10"
 thiserror = "1.0"
+libc = "0.2"
 
 # Compression ecosystem (mirroring awkward-array)
 flate2 = { version = "1.1", default-features = false, features = ["rust_backend"] }
@@ -53,23 +51,26 @@ xz2 = "0.1"
 zstd = { version = "0.13", features = ["zstdmt"] }
 
 # Optional networking deps — enabled by the `remote` feature.
-# Optional networking deps — enabled by the `remote` feature.
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "http2"], optional = true }
 tokio = { version = "1.44", features = ["macros", "rt", "rt-multi-thread", "sync"], optional = true }
-kernels = "0.1.0"
 
 [build-dependencies]
 cc = "1.0"
+bindgen = "0.72.1"
+glob = "0.3"
 
 [dev-dependencies]
 proptest = "1.5"
 criterion = "0.5"
+rand = "0.8"
+pprof = { version = "0.13", features = ["flamegraph"] }
 
 [[example]]
 name = "basic_usage"
 required-features = ["python"]
 
 [[bench]]
-name = "kernels"
+name = "argsort_hip_rocprof_all"
 harness = false
+required-features = ["hip"]
 
