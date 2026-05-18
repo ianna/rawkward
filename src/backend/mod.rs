@@ -4,6 +4,7 @@
 pub mod cuda;
 pub mod device_slice;
 pub mod error;
+#[cfg(feature = "hip")]
 pub mod hip;
 pub mod stream;
 pub mod traits;
@@ -14,14 +15,17 @@ pub use traits::GpuBackend;
 
 pub use cuda::CudaBackend;
 pub use error::GpuError;
+#[cfg(feature = "hip")]
 pub use hip::HipBackend;
 
 pub enum BackendKind {
+    #[cfg(feature = "hip")]
     Hip,
     Cuda,
 }
 
 pub enum BackendInner {
+    #[cfg(feature = "hip")]
     Hip(HipBackend),
     Cuda(CudaBackend),
 }
@@ -34,6 +38,7 @@ pub struct Backend {
 impl Backend {
     pub fn new(kind: BackendKind) -> Result<Self, GpuError> {
         match kind {
+            #[cfg(feature = "hip")]
             BackendKind::Hip => Ok(Self {
                 kind,
                 inner: BackendInner::Hip(HipBackend::new()),
