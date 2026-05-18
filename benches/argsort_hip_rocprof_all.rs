@@ -104,16 +104,15 @@ fn cpu_argsort_parallel(values: &[f32], offsets: &[i64], out: &mut [i64]) {
 
 /// Full-round-trip GPU argsort: H2D upload → kernel dispatch → D2H download.
 ///
-/// Kernels are resolved once before the per-list loop. Lists are dispatched
-/// to the appropriate kernel tier based on length:
-///   ≤ 64    → argsort_small_hip  (in-register bitonic)
-///   ≤ 256   → argsort_medium_hip (LDS bitonic)
-///   > 256   → argsort_large_hip  (rocPRIM segmented)
+/// Three batched launches cover all lists — one per size tier.  Each kernel
+/// skips lists that don't belong to its tier, so the launches can overlap the
+/// full list array without double-sorting anything.
 ///
-/// TODO: small and medium lists should be batched into a single kernel
-/// launch each (one thread block per list, grid = n_lists_in_tier).
-/// Currently each list is a separate launch, which is correct but
-/// sub-optimal for large list counts.
+///   small  launch: grid = (min(nlists, 65536), 1, 1), block = ( 64, 1, 1)
+///   medium launch: grid = (min(nlists, 65536), 1, 1), block = (256, 1, 1)
+///   large  launch: grid = (256,                1, 1), block = (256, 1, 1)
+///
+/// H2D and D2H transfers are amortised across all three launches.
 #[cfg(feature = "hip")]
 fn gpu_argsort_jagged<B: GpuBackend>(
     backend: &B,
@@ -125,66 +124,46 @@ fn gpu_argsort_jagged<B: GpuBackend>(
     let dev_offsets = backend.upload_slice(offsets);
     let mut dev_out = unsafe { backend.alloc_slice::<i64>(values.len()) };
 
-    let k_small = backend
-        .get_kernel("argsort_small_hip")
-        .map_err(GpuError::HipError)?;
-    let k_medium = backend
-        .get_kernel("argsort_medium_hip")
-        .map_err(GpuError::HipError)?;
-    let k_large = backend
-        .get_kernel("argsort_large_hip")
-        .map_err(GpuError::HipError)?;
+    let nlists = (offsets.len() - 1) as i64;
+    let total_size = values.len() as i64;
 
-    let nlists = offsets.len() - 1;
+    // Grid width: clamp to the HIP max of 65536 blocks per dimension.
+    // The stride loop inside each kernel handles the remainder.
+    let grid_w = nlists.min(65_536) as u32;
 
-    // Collect large-list ids for the batched rocPRIM call.
-    let mut has_large = false;
+    // One launch per tier — kernels self-filter by list length.
+    argsort_small(
+        backend,
+        &dev_values,
+        &dev_offsets,
+        &mut dev_out,
+        total_size,
+        nlists,
+        (grid_w, 1, 1),
+        (64, 1, 1),
+    )?;
 
-    for i in 0..nlists {
-        let list_len = (offsets[i + 1] - offsets[i]) as usize;
+    argsort_medium(
+        backend,
+        &dev_values,
+        &dev_offsets,
+        &mut dev_out,
+        total_size,
+        nlists,
+        (grid_w, 1, 1),
+        (256, 1, 1),
+    )?;
 
-        match list_len {
-            0..=64 => {
-                argsort_small(
-                    backend,
-                    &dev_values,
-                    &dev_offsets,
-                    &mut dev_out,
-                    i as i64,
-                    (1, 1, 1),
-                    (64, 1, 1),
-                )?;
-            }
-            65..=256 => {
-                argsort_medium(
-                    backend,
-                    &dev_values,
-                    &dev_offsets,
-                    &mut dev_out,
-                    i as i64,
-                    (1, 1, 1),
-                    (256, 1, 1),
-                )?;
-            }
-            _ => {
-                has_large = true;
-            }
-        }
-    }
-
-    // Large lists: one batched rocPRIM call covers all of them.
-    if has_large {
-        argsort_large(
-            backend,
-            &dev_values,
-            &dev_offsets,
-            &mut dev_out,
-            values.len() as i64,
-            nlists as i64,
-            (256, 1, 1),
-            (256, 1, 1),
-        )?;
-    }
+    argsort_large(
+        backend,
+        &dev_values,
+        &dev_offsets,
+        &mut dev_out,
+        total_size,
+        nlists,
+        (256, 1, 1),
+        (256, 1, 1),
+    )?;
 
     backend.download_slice(&dev_out, out);
     Ok(())
