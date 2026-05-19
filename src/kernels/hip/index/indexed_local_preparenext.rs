@@ -17,12 +17,12 @@ use std::os::raw::{c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_indexed_array_local_preparenext(
-        tocarry:        *mut c_longlong,
-        parents:        *const c_longlong,
-        parentslength:  c_longlong,
-        nextparents:    *const c_longlong,
-        nextlen:        c_longlong,
-        stream:         *mut c_void,
+        tocarry: *mut c_longlong,
+        parents: *const c_longlong,
+        parentslength: c_longlong,
+        nextparents: *const c_longlong,
+        nextlen: c_longlong,
+        stream: *mut c_void,
     );
 }
 
@@ -30,17 +30,17 @@ unsafe extern "C" {
 ///
 /// Positions where no match exists receive -1.
 pub fn hip_indexed_array_local_preparenext(
-    tocarry:       *mut i64,
-    parents:       *const i64,
+    tocarry: *mut i64,
+    parents: *const i64,
     parentslength: i64,
-    nextparents:   *const i64,
-    nextlen:       i64,
-    stream:        *mut c_void,
+    nextparents: *const i64,
+    nextlen: i64,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_indexed_array_local_preparenext(
             tocarry as *mut c_longlong,
-            parents     as *const c_longlong,
+            parents as *const c_longlong,
             parentslength as c_longlong,
             nextparents as *const c_longlong,
             nextlen as c_longlong,

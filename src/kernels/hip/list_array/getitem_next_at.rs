@@ -17,26 +17,26 @@ pub enum GetitemNextAtDtype {
 
 unsafe extern "C" {
     fn awkward_hip_list_array_getitem_next_at(
-        tocarry:    *mut c_longlong,
+        tocarry: *mut c_longlong,
         fromstarts: *const c_void,
-        fromstops:  *const c_void,
-        at:         c_longlong,
-        length:     c_longlong,
+        fromstops: *const c_void,
+        at: c_longlong,
+        length: c_longlong,
         dtype_code: c_int,
-        out_error:  *mut c_int,
-        stream:     *mut c_void,
+        out_error: *mut c_int,
+        stream: *mut c_void,
     );
 }
 
 pub fn hip_list_array_getitem_next_at(
-    tocarry:    *mut i64,
+    tocarry: *mut i64,
     fromstarts: *const c_void,
-    fromstops:  *const c_void,
-    at:         i64,
-    length:     i64,
-    dtype:      GetitemNextAtDtype,
-    out_error:  *mut i32,
-    stream:     *mut c_void,
+    fromstops: *const c_void,
+    at: i64,
+    length: i64,
+    dtype: GetitemNextAtDtype,
+    out_error: *mut i32,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_list_array_getitem_next_at(

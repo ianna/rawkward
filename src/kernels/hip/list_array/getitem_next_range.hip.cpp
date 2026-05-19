@@ -264,37 +264,53 @@ extern "C" void awkward_hip_list_array_getitem_next_range(
     }
 }
 
-// ── 4. spreadadvanced ─────────────────────────────────────────────────────────
 
+// ── 4. spreadadvanced ─────────────────────────────────────────────────────────
+// Typed dispatch for fromoffsets (i32/u32/i64) to match the CPU generic variant.
+
+template <typename C>
 __global__ void list_array_getitem_next_range_spreadadvanced_kernel(
     long long*       toadvanced,
     const long long* fromadvanced,
-    const long long* fromoffsets,
+    const C*         fromoffsets,
     long long        lenstarts
 ) {
     long long i = (long long)blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= lenstarts) return;
-    long long start = fromoffsets[i];
-    long long stop  = fromoffsets[i + 1];
+    long long start = (long long)fromoffsets[i];
+    long long stop  = (long long)fromoffsets[i + 1];
     long long val   = fromadvanced[i];
     for (long long j = start; j < stop; ++j) {
         toadvanced[j] = val;
     }
 }
 
-extern "C" void awkward_hip_list_array_getitem_next_range_spreadadvanced(
-    long long*       toadvanced,
-    const long long* fromadvanced,
-    const long long* fromoffsets,
-    long long        lenstarts,
-    hipStream_t      stream
+template <typename C>
+static void launch_spreadadvanced(
+    long long* toadvanced, const long long* fromadvanced,
+    const void* fromoffsets, long long lenstarts, hipStream_t stream
 ) {
     if (lenstarts <= 0) return;
     dim3 block(256);
     dim3 grid((unsigned int)((lenstarts + 255) / 256));
     hipLaunchKernelGGL(
-        list_array_getitem_next_range_spreadadvanced_kernel,
+        list_array_getitem_next_range_spreadadvanced_kernel<C>,
         grid, block, 0, stream,
-        toadvanced, fromadvanced, fromoffsets, lenstarts
+        toadvanced, fromadvanced, (const C*)fromoffsets, lenstarts
     );
+}
+
+extern "C" void awkward_hip_list_array_getitem_next_range_spreadadvanced(
+    long long*       toadvanced,
+    const long long* fromadvanced,
+    const void*      fromoffsets,
+    long long        lenstarts,
+    int              dtype_code,   // 0=i32, 1=u32, 2=i64
+    hipStream_t      stream
+) {
+    switch (dtype_code) {
+        case 0:  launch_spreadadvanced<int>         (toadvanced, fromadvanced, fromoffsets, lenstarts, stream); break;
+        case 1:  launch_spreadadvanced<unsigned int>(toadvanced, fromadvanced, fromoffsets, lenstarts, stream); break;
+        default: launch_spreadadvanced<long long>   (toadvanced, fromadvanced, fromoffsets, lenstarts, stream); break;
+    }
 }

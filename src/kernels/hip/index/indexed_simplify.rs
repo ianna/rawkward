@@ -26,15 +26,15 @@ pub enum SimplifyDtype {
 
 unsafe extern "C" {
     fn awkward_hip_indexed_array_simplify(
-        toindex:      *mut c_longlong,
-        outerindex:   *const c_void,
-        innerindex:   *const c_void,
-        outerlength:  c_longlong,
-        innerlength:  c_longlong,
-        outer_dtype:  c_int,
-        inner_dtype:  c_int,
-        out_error:    *mut c_int,
-        stream:       *mut c_void,
+        toindex: *mut c_longlong,
+        outerindex: *const c_void,
+        innerindex: *const c_void,
+        outerlength: c_longlong,
+        innerlength: c_longlong,
+        outer_dtype: c_int,
+        inner_dtype: c_int,
+        out_error: *mut c_int,
+        stream: *mut c_void,
     );
 }
 
@@ -42,15 +42,15 @@ unsafe extern "C" {
 ///
 /// `out_error` is a device `i32` pointer: `0` = ok, `1` = out-of-range.
 pub fn hip_indexed_array_simplify(
-    toindex:     *mut i64,
-    outerindex:  *const c_void,
-    innerindex:  *const c_void,
+    toindex: *mut i64,
+    outerindex: *const c_void,
+    innerindex: *const c_void,
     outerlength: i64,
     innerlength: i64,
     outer_dtype: SimplifyDtype,
     inner_dtype: SimplifyDtype,
-    out_error:   *mut i32,
-    stream:      *mut c_void,
+    out_error: *mut i32,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_indexed_array_simplify(

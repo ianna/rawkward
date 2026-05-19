@@ -16,21 +16,21 @@ use std::os::raw::{c_int, c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_indexed_array_fill(
-        toindex:        *mut c_longlong,
-        toindexoffset:  c_longlong,
-        fromindex:      *const c_void,
-        length:         c_longlong,
-        base:           c_longlong,
-        dtype_code:     c_int,
-        stream:         *mut c_void,
+        toindex: *mut c_longlong,
+        toindexoffset: c_longlong,
+        fromindex: *const c_void,
+        length: c_longlong,
+        base: c_longlong,
+        dtype_code: c_int,
+        stream: *mut c_void,
     );
 
     fn awkward_hip_indexed_array_fill_count(
-        toindex:        *mut c_longlong,
-        toindexoffset:  c_longlong,
-        length:         c_longlong,
-        base:           c_longlong,
-        stream:         *mut c_void,
+        toindex: *mut c_longlong,
+        toindexoffset: c_longlong,
+        length: c_longlong,
+        base: c_longlong,
+        stream: *mut c_void,
     );
 }
 
@@ -45,13 +45,13 @@ pub enum IndexFillDtype {
 
 /// Fill a slice of `toindex` from `fromindex`, offsetting non-null values by `base`.
 pub fn hip_indexed_array_fill(
-    toindex:       *mut i64,
+    toindex: *mut i64,
     toindexoffset: i64,
-    fromindex:     *const c_void,
-    length:        i64,
-    base:          i64,
-    dtype:         IndexFillDtype,
-    stream:        *mut c_void,
+    fromindex: *const c_void,
+    length: i64,
+    base: i64,
+    dtype: IndexFillDtype,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_indexed_array_fill(
@@ -68,11 +68,11 @@ pub fn hip_indexed_array_fill(
 
 /// Fill `toindex[toindexoffset + i] = base + i` for `i` in `0..length`.
 pub fn hip_indexed_array_fill_count(
-    toindex:       *mut i64,
+    toindex: *mut i64,
     toindexoffset: i64,
-    length:        i64,
-    base:          i64,
-    stream:        *mut c_void,
+    length: i64,
+    base: i64,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_indexed_array_fill_count(

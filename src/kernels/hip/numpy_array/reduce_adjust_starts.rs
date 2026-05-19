@@ -15,21 +15,21 @@ use std::os::raw::{c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_reduce_adjust_starts(
-        toptr:   *mut c_longlong,
+        toptr: *mut c_longlong,
         parents: *const c_longlong,
-        starts:  *const c_longlong,
-        length:  c_longlong,
-        stream:  *mut c_void,
+        starts: *const c_longlong,
+        length: c_longlong,
+        stream: *mut c_void,
     );
 }
 
 /// Convert global argmin/argmax indices in `toptr` to within-list positions.
 pub fn hip_reduce_adjust_starts(
-    toptr:   *mut i64,
+    toptr: *mut i64,
     parents: *const i64,
-    starts:  *const i64,
-    length:  i64,
-    stream:  *mut c_void,
+    starts: *const i64,
+    length: i64,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_reduce_adjust_starts(

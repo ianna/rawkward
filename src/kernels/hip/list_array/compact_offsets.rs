@@ -17,24 +17,24 @@ pub enum CompactOffsetsDtype {
 
 unsafe extern "C" {
     fn awkward_hip_list_array_compact_offsets(
-        tooffsets:  *mut c_longlong,
+        tooffsets: *mut c_longlong,
         fromstarts: *const c_void,
-        fromstops:  *const c_void,
-        length:     c_longlong,
+        fromstops: *const c_void,
+        length: c_longlong,
         dtype_code: c_int,
-        out_error:  *mut c_int,
-        stream:     *mut c_void,
+        out_error: *mut c_int,
+        stream: *mut c_void,
     );
 }
 
 pub fn hip_list_array_compact_offsets(
-    tooffsets:  *mut i64,
+    tooffsets: *mut i64,
     fromstarts: *const c_void,
-    fromstops:  *const c_void,
-    length:     i64,
-    dtype:      CompactOffsetsDtype,
-    out_error:  *mut i32,
-    stream:     *mut c_void,
+    fromstops: *const c_void,
+    length: i64,
+    dtype: CompactOffsetsDtype,
+    out_error: *mut i32,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_list_array_compact_offsets(

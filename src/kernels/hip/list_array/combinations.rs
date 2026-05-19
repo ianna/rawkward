@@ -21,52 +21,52 @@ pub enum CombinationsDtype {
 
 unsafe extern "C" {
     fn awkward_hip_list_array_combinations_length(
-        tooffsets:   *mut c_longlong,
-        fromstarts:  *const c_void,
-        fromstops:   *const c_void,
-        length:      c_longlong,
-        n:           c_longlong,
+        tooffsets: *mut c_longlong,
+        fromstarts: *const c_void,
+        fromstops: *const c_void,
+        length: c_longlong,
+        n: c_longlong,
         replacement: c_int,
-        dtype_code:  c_int,
-        out_total:   *mut c_longlong,
-        stream:      *mut c_void,
+        dtype_code: c_int,
+        out_total: *mut c_longlong,
+        stream: *mut c_void,
     );
     fn awkward_hip_list_array_combinations(
-        tocarry:             *mut c_longlong,
-        fromstarts:          *const c_void,
-        fromstops:           *const c_void,
-        length:              c_longlong,
-        n:                   c_longlong,
-        replacement:         c_int,
-        total_combinations:  c_longlong,
-        dtype_code:          c_int,
-        stream:              *mut c_void,
+        tocarry: *mut c_longlong,
+        fromstarts: *const c_void,
+        fromstops: *const c_void,
+        length: c_longlong,
+        n: c_longlong,
+        replacement: c_int,
+        total_combinations: c_longlong,
+        dtype_code: c_int,
+        stream: *mut c_void,
     );
 }
 
 /// Compute combination counts per list and build cumulative `tooffsets`.
 /// Caller must zero-init `*out_total` before launch.
 pub fn hip_list_array_combinations_length(
-    tooffsets:   *mut i64,
-    fromstarts:  *const c_void,
-    fromstops:   *const c_void,
-    length:      i64,
-    n:           i64,
+    tooffsets: *mut i64,
+    fromstarts: *const c_void,
+    fromstops: *const c_void,
+    length: i64,
+    n: i64,
     replacement: bool,
-    dtype:       CombinationsDtype,
-    out_total:   *mut i64,
-    stream:      *mut c_void,
+    dtype: CombinationsDtype,
+    out_total: *mut i64,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_list_array_combinations_length(
-            tooffsets  as *mut c_longlong,
+            tooffsets as *mut c_longlong,
             fromstarts,
             fromstops,
-            length      as c_longlong,
-            n           as c_longlong,
+            length as c_longlong,
+            n as c_longlong,
             replacement as c_int,
-            dtype       as c_int,
-            out_total   as *mut c_longlong,
+            dtype as c_int,
+            out_total as *mut c_longlong,
             stream,
         );
     }
@@ -76,26 +76,26 @@ pub fn hip_list_array_combinations_length(
 /// `total_combinations` must be the grand total pre-computed by
 /// [`hip_list_array_combinations_length`].
 pub fn hip_list_array_combinations(
-    tocarry:            *mut i64,
-    fromstarts:         *const c_void,
-    fromstops:          *const c_void,
-    length:             i64,
-    n:                  i64,
-    replacement:        bool,
+    tocarry: *mut i64,
+    fromstarts: *const c_void,
+    fromstops: *const c_void,
+    length: i64,
+    n: i64,
+    replacement: bool,
     total_combinations: i64,
-    dtype:              CombinationsDtype,
-    stream:             *mut c_void,
+    dtype: CombinationsDtype,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_list_array_combinations(
-            tocarry             as *mut c_longlong,
+            tocarry as *mut c_longlong,
             fromstarts,
             fromstops,
-            length              as c_longlong,
-            n                   as c_longlong,
-            replacement         as c_int,
-            total_combinations  as c_longlong,
-            dtype               as c_int,
+            length as c_longlong,
+            n as c_longlong,
+            replacement as c_int,
+            total_combinations as c_longlong,
+            dtype as c_int,
             stream,
         );
     }

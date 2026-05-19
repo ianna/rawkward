@@ -17,12 +17,12 @@ use std::os::raw::{c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_unique_strings_uint8(
-        toptr:         *mut u8,
-        offsets:       *const c_longlong,
+        toptr: *mut u8,
+        offsets: *const c_longlong,
         offsetslength: c_longlong,
-        outoffsets:    *mut c_longlong,
-        out_count:     *mut c_longlong,   // device pointer
-        stream:        *mut c_void,
+        outoffsets: *mut c_longlong,
+        out_count: *mut c_longlong, // device pointer
+        stream: *mut c_void,
     );
 }
 
@@ -31,12 +31,12 @@ unsafe extern "C" {
 /// `out_count` is a device `i64` pointer; after the call it holds the number
 /// of entries written to `outoffsets` (unique string count + 1).
 pub fn hip_unique_strings_uint8(
-    toptr:         *mut u8,
-    offsets:       *const i64,
+    toptr: *mut u8,
+    offsets: *const i64,
     offsetslength: i64,
-    outoffsets:    *mut i64,
-    out_count:     *mut i64,
-    stream:        *mut c_void,
+    outoffsets: *mut i64,
+    out_count: *mut i64,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_unique_strings_uint8(

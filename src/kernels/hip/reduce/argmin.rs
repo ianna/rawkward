@@ -47,4 +47,3 @@ pub fn hip_segmented_argmin<T>(
         );
     }
 }
-

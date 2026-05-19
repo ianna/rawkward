@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
-use std::os::raw::{c_void, c_int, c_longlong};
 use crate::kernels::hip::reduce::HipDtype;
+use std::os::raw::{c_int, c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_segmented_argmax(
@@ -34,4 +34,3 @@ pub fn hip_segmented_argmax<T>(
         );
     }
 }
-

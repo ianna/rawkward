@@ -18,11 +18,11 @@ use std::os::raw::{c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_prepare_utf8_to_utf32_padded(
-        fromptr:       *const u8,
-        fromoffsets:   *const c_longlong,
+        fromptr: *const u8,
+        fromoffsets: *const c_longlong,
         offsetslength: c_longlong,
-        out:           *mut c_longlong,   // device pointer; zero-init before call
-        stream:        *mut c_void,
+        out: *mut c_longlong, // device pointer; zero-init before call
+        stream: *mut c_void,
     );
 }
 
@@ -31,11 +31,11 @@ unsafe extern "C" {
 /// `out` must point to a device-allocated `i64` initialised to `0`.
 /// After the call, `*out` holds the maximum.
 pub fn hip_prepare_utf8_to_utf32_padded(
-    fromptr:       *const u8,
-    fromoffsets:   *const i64,
+    fromptr: *const u8,
+    fromoffsets: *const i64,
     offsetslength: i64,
-    out:           *mut i64,
-    stream:        *mut c_void,
+    out: *mut i64,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_prepare_utf8_to_utf32_padded(

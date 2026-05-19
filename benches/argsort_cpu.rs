@@ -217,9 +217,7 @@ fn bench_argsort_parallel_rust(c: &mut Criterion) {
             let mut out = vec![0i64; total];
             b.iter_batched_ref(
                 || (),
-                |_| {
-                    argsort_parallel(black_box(&values), black_box(&offsets), black_box(&mut out))
-                },
+                |_| argsort_parallel(black_box(&values), black_box(&offsets), black_box(&mut out)),
                 BatchSize::SmallInput,
             )
         });

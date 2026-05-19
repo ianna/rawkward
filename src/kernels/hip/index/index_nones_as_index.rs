@@ -17,24 +17,16 @@ use std::os::raw::{c_longlong, c_void};
 unsafe extern "C" {
     fn awkward_hip_index_nones_as_index(
         toindex: *mut c_longlong,
-        length:  c_longlong,
-        stream:  *mut c_void,
+        length: c_longlong,
+        stream: *mut c_void,
     );
 }
 
 /// Replace -1 (None) entries with sequential indices beyond existing values.
 ///
 /// `toindex` is modified in place on device.
-pub fn hip_index_nones_as_index(
-    toindex: *mut i64,
-    length:  i64,
-    stream:  *mut c_void,
-) {
+pub fn hip_index_nones_as_index(toindex: *mut i64, length: i64, stream: *mut c_void) {
     unsafe {
-        awkward_hip_index_nones_as_index(
-            toindex as *mut c_longlong,
-            length as c_longlong,
-            stream,
-        );
+        awkward_hip_index_nones_as_index(toindex as *mut c_longlong, length as c_longlong, stream);
     }
 }

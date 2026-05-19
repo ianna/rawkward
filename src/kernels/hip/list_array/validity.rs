@@ -17,24 +17,24 @@ pub enum ValidityDtype {
 
 unsafe extern "C" {
     fn awkward_hip_list_array_validity(
-        fromstarts:  *const c_void,
-        fromstops:   *const c_void,
-        length:      c_longlong,
-        lencontent:  c_longlong,
-        dtype_code:  c_int,
-        out_error:   *mut c_int,
-        stream:      *mut c_void,
+        fromstarts: *const c_void,
+        fromstops: *const c_void,
+        length: c_longlong,
+        lencontent: c_longlong,
+        dtype_code: c_int,
+        out_error: *mut c_int,
+        stream: *mut c_void,
     );
 }
 
 pub fn hip_list_array_validity(
     fromstarts: *const c_void,
-    fromstops:  *const c_void,
-    length:     i64,
+    fromstops: *const c_void,
+    length: i64,
     lencontent: i64,
-    dtype:      ValidityDtype,
-    out_error:  *mut i32,
-    stream:     *mut c_void,
+    dtype: ValidityDtype,
+    out_error: *mut i32,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_list_array_validity(

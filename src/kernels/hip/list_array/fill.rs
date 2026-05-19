@@ -18,30 +18,30 @@ pub enum FillDtype {
 
 unsafe extern "C" {
     fn awkward_hip_list_array_fill(
-        tostarts:        *mut c_longlong,
-        tostartsoffset:  c_longlong,
-        tostops:         *mut c_longlong,
-        tostopsoffset:   c_longlong,
-        fromstarts:      *const c_void,
-        fromstops:       *const c_void,
-        base:            c_longlong,
-        length:          c_longlong,
-        dtype_code:      c_int,
-        stream:          *mut c_void,
+        tostarts: *mut c_longlong,
+        tostartsoffset: c_longlong,
+        tostops: *mut c_longlong,
+        tostopsoffset: c_longlong,
+        fromstarts: *const c_void,
+        fromstops: *const c_void,
+        base: c_longlong,
+        length: c_longlong,
+        dtype_code: c_int,
+        stream: *mut c_void,
     );
 }
 
 pub fn hip_list_array_fill(
-    tostarts:       *mut i64,
+    tostarts: *mut i64,
     tostartsoffset: i64,
-    tostops:        *mut i64,
-    tostopsoffset:  i64,
-    fromstarts:     *const c_void,
-    fromstops:      *const c_void,
-    base:           i64,
-    length:         i64,
-    dtype:          FillDtype,
-    stream:         *mut c_void,
+    tostops: *mut i64,
+    tostopsoffset: i64,
+    fromstarts: *const c_void,
+    fromstops: *const c_void,
+    base: i64,
+    length: i64,
+    dtype: FillDtype,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_list_array_fill(

@@ -21,25 +21,25 @@ use std::os::raw::{c_int, c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_indexed_array_getitem_nextcarry(
-        tocarry:    *mut c_longlong,
-        fromindex:  *const c_void,
-        length:     c_longlong,
+        tocarry: *mut c_longlong,
+        fromindex: *const c_void,
+        length: c_longlong,
         lencontent: c_longlong,
-        out_error:  *mut c_int,
+        out_error: *mut c_int,
         dtype_code: c_int,
-        stream:     *mut c_void,
+        stream: *mut c_void,
     );
 
     fn awkward_hip_indexed_array_getitem_nextcarry_outindex(
-        tocarry:    *mut c_longlong,
-        toindex:    *mut c_longlong,
-        fromindex:  *const c_void,
-        length:     c_longlong,
+        tocarry: *mut c_longlong,
+        toindex: *mut c_longlong,
+        fromindex: *const c_void,
+        length: c_longlong,
         lencontent: c_longlong,
-        out_count:  *mut c_longlong,
-        out_error:  *mut c_int,
+        out_count: *mut c_longlong,
+        out_error: *mut c_int,
         dtype_code: c_int,
-        stream:     *mut c_void,
+        stream: *mut c_void,
     );
 }
 
@@ -54,13 +54,13 @@ pub enum GetitemCarryDtype {
 
 /// Copy all fromindex entries to tocarry; error if out of range.
 pub fn hip_indexed_array_getitem_nextcarry(
-    tocarry:    *mut i64,
-    fromindex:  *const c_void,
-    length:     i64,
+    tocarry: *mut i64,
+    fromindex: *const c_void,
+    length: i64,
     lencontent: i64,
-    out_error:  *mut i32,
-    dtype:      GetitemCarryDtype,
-    stream:     *mut c_void,
+    out_error: *mut i32,
+    dtype: GetitemCarryDtype,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_indexed_array_getitem_nextcarry(
@@ -79,15 +79,15 @@ pub fn hip_indexed_array_getitem_nextcarry(
 ///
 /// `out_count` (device i64) receives the number of entries written to `tocarry`.
 pub fn hip_indexed_array_getitem_nextcarry_outindex(
-    tocarry:    *mut i64,
-    toindex:    *mut i64,
-    fromindex:  *const c_void,
-    length:     i64,
+    tocarry: *mut i64,
+    toindex: *mut i64,
+    fromindex: *const c_void,
+    length: i64,
     lencontent: i64,
-    out_count:  *mut i64,
-    out_error:  *mut i32,
-    dtype:      GetitemCarryDtype,
-    stream:     *mut c_void,
+    out_count: *mut i64,
+    out_error: *mut i32,
+    dtype: GetitemCarryDtype,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_indexed_array_getitem_nextcarry_outindex(

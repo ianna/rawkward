@@ -18,21 +18,21 @@ pub enum MinRangeDtype {
 unsafe extern "C" {
     fn awkward_hip_list_array_min_range(
         fromstarts: *const c_void,
-        fromstops:  *const c_void,
-        length:     c_longlong,
+        fromstops: *const c_void,
+        length: c_longlong,
         dtype_code: c_int,
-        out_min:    *mut c_longlong,
-        stream:     *mut c_void,
+        out_min: *mut c_longlong,
+        stream: *mut c_void,
     );
 }
 
 pub fn hip_list_array_min_range(
     fromstarts: *const c_void,
-    fromstops:  *const c_void,
-    length:     i64,
-    dtype:      MinRangeDtype,
-    out_min:    *mut i64,
-    stream:     *mut c_void,
+    fromstops: *const c_void,
+    length: i64,
+    dtype: MinRangeDtype,
+    out_min: *mut i64,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_list_array_min_range(

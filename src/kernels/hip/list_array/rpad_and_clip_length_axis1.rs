@@ -18,23 +18,23 @@ pub enum RpadClipLenDtype {
 unsafe extern "C" {
     fn awkward_hip_list_array_rpad_and_clip_length_axis1(
         fromstarts: *const c_void,
-        fromstops:  *const c_void,
-        length:     c_longlong,
-        target:     c_longlong,
+        fromstops: *const c_void,
+        length: c_longlong,
+        target: c_longlong,
         dtype_code: c_int,
-        out_total:  *mut c_longlong,
-        stream:     *mut c_void,
+        out_total: *mut c_longlong,
+        stream: *mut c_void,
     );
 }
 
 pub fn hip_list_array_rpad_and_clip_length_axis1(
     fromstarts: *const c_void,
-    fromstops:  *const c_void,
-    length:     i64,
-    target:     i64,
-    dtype:      RpadClipLenDtype,
-    out_total:  *mut i64,
-    stream:     *mut c_void,
+    fromstops: *const c_void,
+    length: i64,
+    target: i64,
+    dtype: RpadClipLenDtype,
+    out_total: *mut i64,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_list_array_rpad_and_clip_length_axis1(

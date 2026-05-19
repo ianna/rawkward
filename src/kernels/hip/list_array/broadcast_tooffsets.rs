@@ -17,28 +17,28 @@ pub enum BroadcastDtype {
 
 unsafe extern "C" {
     fn awkward_hip_list_array_broadcast_tooffsets(
-        tocarry:     *mut c_longlong,
+        tocarry: *mut c_longlong,
         fromoffsets: *const c_longlong,
-        fromstarts:  *const c_void,
-        fromstops:   *const c_void,
-        nlists:      c_longlong,
-        lencontent:  c_longlong,
-        dtype_code:  c_int,
-        out_error:   *mut c_int,
-        stream:      *mut c_void,
+        fromstarts: *const c_void,
+        fromstops: *const c_void,
+        nlists: c_longlong,
+        lencontent: c_longlong,
+        dtype_code: c_int,
+        out_error: *mut c_int,
+        stream: *mut c_void,
     );
 }
 
 pub fn hip_list_array_broadcast_tooffsets(
-    tocarry:     *mut i64,
+    tocarry: *mut i64,
     fromoffsets: *const i64,
-    fromstarts:  *const c_void,
-    fromstops:   *const c_void,
-    nlists:      i64,
-    lencontent:  i64,
-    dtype:       BroadcastDtype,
-    out_error:   *mut i32,
-    stream:      *mut c_void,
+    fromstarts: *const c_void,
+    fromstops: *const c_void,
+    nlists: i64,
+    lencontent: i64,
+    dtype: BroadcastDtype,
+    out_error: *mut i32,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_list_array_broadcast_tooffsets(

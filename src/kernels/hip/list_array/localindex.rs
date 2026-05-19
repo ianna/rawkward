@@ -17,20 +17,20 @@ pub enum LocalindexDtype {
 
 unsafe extern "C" {
     fn awkward_hip_list_array_localindex(
-        toindex:    *mut c_longlong,
-        offsets:    *const c_void,
-        length:     c_longlong,
+        toindex: *mut c_longlong,
+        offsets: *const c_void,
+        length: c_longlong,
         dtype_code: c_int,
-        stream:     *mut c_void,
+        stream: *mut c_void,
     );
 }
 
 pub fn hip_list_array_localindex(
-    toindex:    *mut i64,
-    offsets:    *const c_void,
-    length:     i64,
-    dtype:      LocalindexDtype,
-    stream:     *mut c_void,
+    toindex: *mut i64,
+    offsets: *const c_void,
+    length: i64,
+    dtype: LocalindexDtype,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_list_array_localindex(
