@@ -39,9 +39,8 @@ fn main() {
     // 4. Rebuild triggers
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=Cargo.toml");
-    println!("cargo:rerun-if-changed=benches/awkward_bench_wrappers.cpp");
-    println!("cargo:rerun-if-env-changed=AWKWARD_CPP_PATH");
-    println!("cargo:rerun-if-env-changed=AWKWARD_CPP_VERSION");
+    // Note: awkward_bench_wrappers.cpp and individual kernel sources are
+    // registered inside compile_awkward_bench_cxx when bench-cxx is on.
     println!("cargo:rerun-if-env-changed=HIP_PATH");
     println!("cargo:rerun-if-env-changed=ROCM_PATH");
 }
@@ -209,44 +208,155 @@ fn generate_hip_bindings() {
 // ---------------------------------------------------------------------------
 // Optional: awkward-cpp C++ benchmark kernels
 // ---------------------------------------------------------------------------
+//
+// Two separate compilation units:
+//
+//   librawkward_argsort_cxx  — standalone argsort, no external headers.
+//                              Always built.  Powers `argsort_cpu` bench.
+//
+//   libawkward_bench         — full awkward CPU-kernel wrappers.
+//                              Only built when awkward/kernels.h is found.
+//                              Powers `kernels` bench C++ comparisons.
+//
+// Header search order (for libawkward_bench only):
+//   1. AWKWARD_CPP_INCLUDE env var (explicit path override, e.g.
+//      ~/Projects/awkward.2.9.x/awkward/awkward-cpp/include)
+//   2. `python3 -c "import awkward_cpp; …"` (pip / conda install)
+//
+// Source directory (must match the headers' failure() arity):
+//   When headers are found via a local checkout, the sibling
+//   src/cpu-kernels/ directory is used so sources and headers are
+//   always co-versioned.  Falls back to src/kernels/awkward-cpp/
+//   (in-tree copies) when the sibling dir doesn't exist.
+//
+// The pip wheel for awkward_cpp ≥ v50 does not ship C++ headers, so
+// libawkward_bench may not compile on all machines.  librawkward_argsort_cxx
+// has no such dependency and always works.
 
 fn compile_awkward_bench_cxx() {
-    let awkward_cpp_path =
-        env::var("AWKWARD_CPP_PATH").unwrap_or_else(|_| "/usr/local".to_string());
-    let include = format!("{}/include", awkward_cpp_path);
-    let lib = format!("{}/lib", awkward_cpp_path);
-
+    // ── Part 1: standalone argsort (no headers, always works) ────────────
     let out_dir = env::var("OUT_DIR").unwrap();
-    let obj = format!("{out_dir}/awkward_bench_wrappers.o");
 
-    let status = Command::new("c++")
-        .args([
-            "-O2",
-            "--std=c++17",
-            "-fPIC",
-            "-c",
-            &format!("-I{}", include),
-            "benches/awkward_bench_wrappers.cpp",
-            "-o",
-            &obj,
-        ])
-        .status()
-        .expect("Failed to run c++");
-    if !status.success() {
-        panic!("c++ failed to compile awkward_bench_wrappers.cpp");
-    }
+    cc::Build::new()
+        .cpp(true)
+        .opt_level(2)
+        .std("c++17")
+        .flag("-fPIC")
+        .file("benches/argsort_cxx_impl.cpp")
+        .compile("rawkward_argsort_cxx");
 
-    let lib_out = format!("{out_dir}/libawkward_bench.a");
-    let status = Command::new("ar")
-        .args(["crus", &lib_out, &obj])
-        .status()
-        .expect("Failed to run ar");
-    if !status.success() {
-        panic!("ar failed to archive awkward_bench_wrappers");
-    }
-
+    // Emit link directives explicitly — some cc versions only emit them via
+    // the Library's Drop impl, which can be silently skipped.
     println!("cargo:rustc-link-search=native={out_dir}");
-    println!("cargo:rustc-link-search=native={lib}");
+    println!("cargo:rustc-link-lib=static=rawkward_argsort_cxx");
+
+    println!("cargo:rerun-if-changed=benches/argsort_cxx_impl.cpp");
+    println!("cargo:rerun-if-env-changed=AWKWARD_CPP_INCLUDE");
+    println!("cargo:rerun-if-env-changed=PYO3_PYTHON");
+
+    // ── Part 2: full awkward bench lib (needs headers) ────────────────────
+    let include_dir = match try_find_awkward_cpp_include() {
+        Some(d) => d,
+        None => {
+            println!(
+                "cargo:warning=bench-cxx: awkward/kernels.h not found — \
+                 `kernels` bench C++ comparisons disabled. \
+                 Set AWKWARD_CPP_INCLUDE to the directory containing \
+                 awkward/kernels.h to enable them."
+            );
+            return; // argsort bench still works via Part 1
+        }
+    };
+
+    // Prefer the cpu-kernels sources co-located with the found headers so that
+    // the failure() call-site arity always matches what common.h declares.
+    //
+    // Checkout layout:
+    //   awkward-cpp/include/   ← include_dir points here
+    //   awkward-cpp/src/cpu-kernels/  ← co-versioned sources
+    //
+    // Fall back to the in-tree copies (src/kernels/awkward-cpp/) only when the
+    // sibling directory doesn't exist (e.g. a pip include-only install).
+    let ext_cpu_kernels = include_dir
+        .parent()                         // …/awkward-cpp
+        .map(|p| p.join("src/cpu-kernels"));
+
+    let (src_dir, src_label): (PathBuf, &str) = match ext_cpu_kernels {
+        Some(ref d) if d.is_dir() => (d.clone(), "checkout src/cpu-kernels"),
+        _ => (PathBuf::from("src/kernels/awkward-cpp"), "in-tree src/kernels/awkward-cpp"),
+    };
+
+    println!(
+        "cargo:warning=bench-cxx: kernel sources → {} ({})",
+        src_dir.display(),
+        src_label,
+    );
+
+    let mut kernel_srcs: Vec<PathBuf> = fs::read_dir(&src_dir)
+        .unwrap_or_else(|e| panic!("Cannot read kernel source dir {}: {}", src_dir.display(), e))
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.extension().map_or(false, |e| e == "cpp"))
+        .collect();
+    kernel_srcs.sort();
+
+    let mut build = cc::Build::new();
+    build
+        .cpp(true)
+        .opt_level(2)
+        .std("c++17")
+        .flag("-fPIC")
+        .include(&include_dir)
+        .file("benches/awkward_bench_wrappers.cpp");
+
+    for src in &kernel_srcs {
+        build.file(src);
+        println!("cargo:rerun-if-changed={}", src.display());
+    }
+
+    build.compile("awkward_bench");
+
+    println!("cargo:rustc-link-search=native={}", env::var("OUT_DIR").unwrap());
     println!("cargo:rustc-link-lib=static=awkward_bench");
-    println!("cargo:rustc-link-lib=dylib=awkward-cpp");
+
+    println!("cargo:rerun-if-changed=benches/awkward_bench_wrappers.cpp");
+}
+
+/// Try to locate the directory that contains `awkward/kernels.h`.
+/// Returns `None` (never panics) so the caller can degrade gracefully.
+fn try_find_awkward_cpp_include() -> Option<PathBuf> {
+    // 1. Explicit override.
+    if let Ok(path) = env::var("AWKWARD_CPP_INCLUDE") {
+        let p = PathBuf::from(&path);
+        if p.join("awkward/kernels.h").exists() {
+            return Some(p);
+        }
+        println!(
+            "cargo:warning=AWKWARD_CPP_INCLUDE={path:?} set but \
+             awkward/kernels.h not found there"
+        );
+        return None;
+    }
+
+    // 2. Pip-installed package — ask Python for the package location.
+    let python = env::var("PYO3_PYTHON").unwrap_or_else(|_| "python3".to_string());
+    if let Ok(out) = Command::new(&python)
+        .args([
+            "-c",
+            "import awkward_cpp, os; \
+             print(os.path.join(os.path.dirname(\
+               os.path.abspath(awkward_cpp.__file__)), 'include'))",
+        ])
+        .output()
+    {
+        if out.status.success() {
+            let inc = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            let p = PathBuf::from(&inc);
+            if p.join("awkward/kernels.h").exists() {
+                println!("cargo:warning=awkward-cpp include: {inc}");
+                return Some(p);
+            }
+        }
+    }
+
+    None
 }

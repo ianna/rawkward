@@ -164,3 +164,5 @@ void bench_awkward_missing_repeat_64(
 }
 
 } // extern "C"
+// Note: bench_awkward_argsort_float32 is defined in argsort_cxx_impl.cpp
+// (standalone, no awkward headers required) rather than here.

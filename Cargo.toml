@@ -70,6 +70,14 @@ name = "basic_usage"
 required-features = ["python"]
 
 [[bench]]
+name = "kernels"
+harness = false
+
+[[bench]]
+name = "argsort_cpu"
+harness = false
+
+[[bench]]
 name = "argsort_hip_rocprof_all"
 harness = false
 required-features = ["hip"]
