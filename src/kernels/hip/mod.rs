@@ -6,3 +6,4 @@ pub mod sort;
 pub mod reduce;
 pub mod numpy_array;
 pub mod index;
+pub mod list_array;
