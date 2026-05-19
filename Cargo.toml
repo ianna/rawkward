@@ -53,7 +53,6 @@ zstd = { version = "0.13", features = ["zstdmt"] }
 # Optional networking deps — enabled by the `remote` feature.
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "http2"], optional = true }
 tokio = { version = "1.44", features = ["macros", "rt", "rt-multi-thread", "sync"], optional = true }
-kernels = "0.1.0"
 
 [build-dependencies]
 cc = "1.0"
@@ -69,6 +68,14 @@ pprof = { version = "0.13", features = ["flamegraph"] }
 [[example]]
 name = "basic_usage"
 required-features = ["python"]
+
+[[bench]]
+name = "kernels"
+harness = false
+
+[[bench]]
+name = "argsort_cpu"
+harness = false
 
 [[bench]]
 name = "argsort_hip_rocprof_all"
