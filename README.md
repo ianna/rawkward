@@ -1,16 +1,9 @@
-# <img src="docs/images/rust-reverted-logo.svg"> 
-
-# Яawkward
-
-_Rust-backed engine for nested, variable-length, columnar data_
-
-# Why Яawkwrd?
-
+# <img src="docs/images/Яwkward.png" width=300 align=left> 
 **Яawkwrd** (pronounced *"Rawk-ward"*) is a specialized "foundry" for the future of Awkward Array. To evolve the library while maintaining its status as a production-grade standard, we have decoupled core kernel development into this dedicated project. 
 
 Our mission is to forge a high-performance, Rust-based engine that remains 100% structurally compatible with the existing ecosystem.
 
----
+___
 
 ### The Foundry Approach
 
