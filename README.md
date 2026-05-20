@@ -4,9 +4,9 @@
 
 _Rust-backed engine for nested, variable-length, columnar data_
 
-# Why Rawkwrd?
+# Why Яawkwrd?
 
-**Rawkwrd** is a specialized "foundry" for the future of Awkward Array. To evolve the library while maintaining its status as a production-grade standard, we have decoupled core kernel development into this dedicated project. 
+**Яawkwrd** (pronounced *"Rawk-ward"*) is a specialized "foundry" for the future of Awkward Array. To evolve the library while maintaining its status as a production-grade standard, we have decoupled core kernel development into this dedicated project. 
 
 Our mission is to forge a high-performance, Rust-based engine that remains 100% structurally compatible with the existing ecosystem.
 
@@ -20,7 +20,7 @@ We replicate current kernel structures exactly to ensure **"plug-and-play"** com
 * **Structural Parity:** By mirroring the existing architecture, we eliminate the "integration tax" usually associated with major language migrations.
 
 #### 2. Isolated Validation (The MVP)
-Rawkwrd acts as a clean-room environment to prove the Rust implementation before it touches production users.
+Яawkwrd acts as a clean-room environment to prove the Rust implementation before it touches production users.
 * **Bit-for-Bit Parity:** We expose the Rust core to Python via a lean MVP to run real-world comparisons against legacy C++ kernels.
 * **Performance Benchmarking:** We measure computational overhead and memory safety in isolation, ensuring the new core is faster and more robust.
 
@@ -37,4 +37,4 @@ While standard development often happens in branches, the fundamental shift to R
 
 ---
 
-> **Rawkwrd is not a fork—it is a laboratory.** We mirror the structure to ensure compatibility, use Rust to ensure performance, and keep it separate to ensure the production library remains rock-solid.
+> **Яawkwrd is not a fork—it is a laboratory.** We mirror the structure to ensure compatibility, use Rust to ensure performance, and keep it separate to ensure the production library remains rock-solid.
