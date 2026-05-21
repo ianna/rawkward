@@ -19,11 +19,14 @@ fn main() {
     }
 
     // 2. HIP kernel compilation + bindings
+    // Declare hip_rocm as a known cfg name so rustc's check-cfg lint accepts it.
+    println!("cargo::rustc-check-cfg=cfg(hip_rocm)");
     if hip_feature {
         let hip_available = detect_hip();
         println!("cargo:rustc-env=RAWKWARD_HIP_AVAILABLE={}", hip_available);
         if hip_available {
             println!("cargo:warning=ROCm/HIP detected — enabling GPU kernels");
+            println!("cargo:rustc-cfg=hip_rocm");
             compile_hip_kernels();
             generate_hip_bindings();
         } else {
@@ -298,7 +301,7 @@ fn compile_awkward_bench_cxx() {
     let mut kernel_srcs: Vec<PathBuf> = fs::read_dir(&src_dir)
         .unwrap_or_else(|e| panic!("Cannot read kernel source dir {}: {}", src_dir.display(), e))
         .filter_map(|e| e.ok().map(|e| e.path()))
-        .filter(|p| p.extension().map_or(false, |e| e == "cpp"))
+        .filter(|p| p.extension().is_some_and(|e| e == "cpp"))
         .collect();
     kernel_srcs.sort();
 
