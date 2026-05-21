@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
-use std::os::raw::{c_void, c_int, c_longlong};
+use std::os::raw::{c_int, c_longlong, c_void};
 
 #[derive(Debug, Clone, Copy)]
 pub enum HipDtype {
@@ -41,4 +41,3 @@ pub fn hip_segmented_sum<T>(
         );
     }
 }
-

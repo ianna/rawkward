@@ -20,26 +20,26 @@ use std::os::raw::{c_int, c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_indexed_array_numnull(
-        fromindex:  *const c_void,
-        length:     c_longlong,
-        out_count:  *mut c_longlong,
+        fromindex: *const c_void,
+        length: c_longlong,
+        out_count: *mut c_longlong,
         dtype_code: c_int,
-        stream:     *mut c_void,
+        stream: *mut c_void,
     );
 
     fn awkward_hip_indexed_array_numnull_parents(
-        numnull:    *mut c_longlong,
-        fromindex:  *const c_void,
-        length:     c_longlong,
-        out_total:  *mut c_longlong,
+        numnull: *mut c_longlong,
+        fromindex: *const c_void,
+        length: c_longlong,
+        out_total: *mut c_longlong,
         dtype_code: c_int,
-        stream:     *mut c_void,
+        stream: *mut c_void,
     );
 
     fn awkward_hip_indexed_array_numnull_unique(
-        toindex:    *mut c_longlong,
-        lenindex:   c_longlong,
-        stream:     *mut c_void,
+        toindex: *mut c_longlong,
+        lenindex: c_longlong,
+        stream: *mut c_void,
     );
 }
 
@@ -54,11 +54,11 @@ pub enum NumnullDtype {
 
 /// Count null (negative) entries in `fromindex`; result added into `*out_count`.
 pub fn hip_indexed_array_numnull(
-    fromindex:  *const c_void,
-    length:     i64,
-    out_count:  *mut i64,
-    dtype:      NumnullDtype,
-    stream:     *mut c_void,
+    fromindex: *const c_void,
+    length: i64,
+    out_count: *mut i64,
+    dtype: NumnullDtype,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_indexed_array_numnull(
@@ -73,12 +73,12 @@ pub fn hip_indexed_array_numnull(
 
 /// Write per-element null flag (1/0) to `numnull`; total added into `*out_total`.
 pub fn hip_indexed_array_numnull_parents(
-    numnull:    *mut i64,
-    fromindex:  *const c_void,
-    length:     i64,
-    out_total:  *mut i64,
-    dtype:      NumnullDtype,
-    stream:     *mut c_void,
+    numnull: *mut i64,
+    fromindex: *const c_void,
+    length: i64,
+    out_total: *mut i64,
+    dtype: NumnullDtype,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_indexed_array_numnull_parents(
@@ -93,11 +93,7 @@ pub fn hip_indexed_array_numnull_parents(
 }
 
 /// Fill `toindex[0..lenindex] = 0..lenindex-1`, `toindex[lenindex] = -1`.
-pub fn hip_indexed_array_numnull_unique(
-    toindex:  *mut i64,
-    lenindex: i64,
-    stream:   *mut c_void,
-) {
+pub fn hip_indexed_array_numnull_unique(toindex: *mut i64, lenindex: i64, stream: *mut c_void) {
     unsafe {
         awkward_hip_indexed_array_numnull_unique(
             toindex as *mut c_longlong,

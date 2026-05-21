@@ -21,14 +21,14 @@ use std::os::raw::{c_int, c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_sort_asstrings_uint8(
-        toptr:         *mut u8,
-        fromptr:       *const u8,
-        offsets:       *const c_longlong,
+        toptr: *mut u8,
+        fromptr: *const u8,
+        offsets: *const c_longlong,
         offsetslength: c_longlong,
-        outoffsets:    *mut c_longlong,
-        ascending:     c_int,
-        stable:        c_int,
-        stream:        *mut c_void,
+        outoffsets: *mut c_longlong,
+        ascending: c_int,
+        stable: c_int,
+        stream: *mut c_void,
     );
 }
 
@@ -37,14 +37,14 @@ unsafe extern "C" {
 /// `ascending`: `true` = smallest first, `false` = largest first.
 /// `stable`: `true` = preserve relative order of equal strings.
 pub fn hip_sort_asstrings_uint8(
-    toptr:         *mut u8,
-    fromptr:       *const u8,
-    offsets:       *const i64,
+    toptr: *mut u8,
+    fromptr: *const u8,
+    offsets: *const i64,
     offsetslength: i64,
-    outoffsets:    *mut i64,
-    ascending:     bool,
-    stable:        bool,
-    stream:        *mut c_void,
+    outoffsets: *mut i64,
+    ascending: bool,
+    stable: bool,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_sort_asstrings_uint8(

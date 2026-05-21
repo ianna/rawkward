@@ -9,16 +9,16 @@
 //!
 //! `toptr` must have `n_lists * target` elements.
 
-use std::os::raw::{c_void, c_longlong};
+use std::os::raw::{c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_pad_zero_to_length(
-        fromptr:     *const c_void,
+        fromptr: *const c_void,
         fromoffsets: *const c_longlong,
-        target:      c_longlong,
-        toptr:       *mut c_void,
-        n_lists:     c_longlong,
-        stream:      *mut c_void,
+        target: c_longlong,
+        toptr: *mut c_void,
+        n_lists: c_longlong,
+        stream: *mut c_void,
     );
 }
 
@@ -26,12 +26,12 @@ unsafe extern "C" {
 ///
 /// `toptr` must have `n_lists * target` bytes allocated on the device.
 pub fn hip_pad_zero_to_length(
-    fromptr:     *const u8,
+    fromptr: *const u8,
     fromoffsets: *const i64,
-    target:      i64,
-    toptr:       *mut u8,
-    n_lists:     i64,
-    stream:      *mut c_void,
+    target: i64,
+    toptr: *mut u8,
+    n_lists: i64,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_pad_zero_to_length(

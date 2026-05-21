@@ -19,8 +19,8 @@
 //!
 //! `out` must have `offsets[n_segments]` elements (same length as `data`).
 
-use std::os::raw::{c_void, c_int, c_longlong};
 use crate::kernels::hip::reduce::HipDtype;
+use std::os::raw::{c_int, c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_segmented_unique_ranges(

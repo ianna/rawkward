@@ -14,11 +14,11 @@ use std::os::raw::{c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_reduce_mask_bytemasked(
-        toptr:    *mut i8,
-        parents:  *const c_longlong,
-        ngroups:  c_longlong,
+        toptr: *mut i8,
+        parents: *const c_longlong,
+        ngroups: c_longlong,
         nparents: c_longlong,
-        stream:   *mut c_void,
+        stream: *mut c_void,
     );
 }
 
@@ -26,11 +26,11 @@ unsafe extern "C" {
 ///
 /// `toptr[g] = 1` (null) for every group; then `toptr[parents[j]] = 0` (valid).
 pub fn hip_reduce_mask_bytemasked(
-    toptr:    *mut i8,
-    parents:  *const i64,
-    ngroups:  i64,
+    toptr: *mut i8,
+    parents: *const i64,
+    ngroups: i64,
     nparents: i64,
-    stream:   *mut c_void,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_reduce_mask_bytemasked(

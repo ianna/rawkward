@@ -16,14 +16,14 @@ use std::os::raw::{c_int, c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_indexed_array_index_of_nulls(
-        toindex:    *mut c_longlong,
-        fromindex:  *const c_void,
-        parents:    *const c_longlong,
-        starts:     *const c_longlong,
-        length:     c_longlong,
-        out_count:  *mut c_longlong,
+        toindex: *mut c_longlong,
+        fromindex: *const c_void,
+        parents: *const c_longlong,
+        starts: *const c_longlong,
+        length: c_longlong,
+        out_count: *mut c_longlong,
         dtype_code: c_int,
-        stream:     *mut c_void,
+        stream: *mut c_void,
     );
 }
 
@@ -40,14 +40,14 @@ pub enum IndexOfNullsDtype {
 ///
 /// `out_count` (device i64) receives the number of nulls written.
 pub fn hip_indexed_array_index_of_nulls(
-    toindex:    *mut i64,
-    fromindex:  *const c_void,
-    parents:    *const i64,
-    starts:     *const i64,
-    length:     i64,
-    out_count:  *mut i64,
-    dtype:      IndexOfNullsDtype,
-    stream:     *mut c_void,
+    toindex: *mut i64,
+    fromindex: *const c_void,
+    parents: *const i64,
+    starts: *const i64,
+    length: i64,
+    out_count: *mut i64,
+    dtype: IndexOfNullsDtype,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_indexed_array_index_of_nulls(

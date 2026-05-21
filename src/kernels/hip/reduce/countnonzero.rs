@@ -4,8 +4,8 @@
 //! HIP segmented count-nonzero FFI wrapper.
 //! Calls: awkward_hip_segmented_countnonzero(data, offsets, out, n_segments, dtype_code, stream)
 
-use std::os::raw::{c_void, c_int, c_longlong};
 use crate::kernels::hip::reduce::HipDtype;
+use std::os::raw::{c_int, c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_segmented_countnonzero(

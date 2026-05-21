@@ -278,12 +278,15 @@ fn compile_awkward_bench_cxx() {
     // Fall back to the in-tree copies (src/kernels/awkward-cpp/) only when the
     // sibling directory doesn't exist (e.g. a pip include-only install).
     let ext_cpu_kernels = include_dir
-        .parent()                         // …/awkward-cpp
+        .parent() // …/awkward-cpp
         .map(|p| p.join("src/cpu-kernels"));
 
     let (src_dir, src_label): (PathBuf, &str) = match ext_cpu_kernels {
         Some(ref d) if d.is_dir() => (d.clone(), "checkout src/cpu-kernels"),
-        _ => (PathBuf::from("src/kernels/awkward-cpp"), "in-tree src/kernels/awkward-cpp"),
+        _ => (
+            PathBuf::from("src/kernels/awkward-cpp"),
+            "in-tree src/kernels/awkward-cpp",
+        ),
     };
 
     println!(
@@ -315,7 +318,10 @@ fn compile_awkward_bench_cxx() {
 
     build.compile("awkward_bench");
 
-    println!("cargo:rustc-link-search=native={}", env::var("OUT_DIR").unwrap());
+    println!(
+        "cargo:rustc-link-search=native={}",
+        env::var("OUT_DIR").unwrap()
+    );
     println!("cargo:rustc-link-lib=static=awkward_bench");
 
     println!("cargo:rerun-if-changed=benches/awkward_bench_wrappers.cpp");
