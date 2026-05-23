@@ -51,8 +51,6 @@
 //! ```
 
 #[cfg(all(feature = "hip", hip_rocm))]
-use std::ffi::c_void;
-#[cfg(all(feature = "hip", hip_rocm))]
 use std::time::{Duration, Instant};
 
 #[cfg(all(feature = "hip", hip_rocm))]
@@ -65,7 +63,7 @@ use rawkward::kernels::cpu::reduce::sum::{
     reduce_sum_float32_float32_64, reduce_sum_int64_int64_64,
 };
 #[cfg(all(feature = "hip", hip_rocm))]
-use rawkward::kernels::hip::reduce::sum::{HipDtype, hip_segmented_sum};
+use rawkward::kernels::hip::reduce::sum::{segmented_sum_f32, segmented_sum_i64};
 
 // ── Input sizes ───────────────────────────────────────────────────────────────
 // Mirror `SIZES` in `benches/reduce_sum_metal.rs`.
@@ -127,37 +125,6 @@ fn time_iters<F: FnMut()>(mut f: F, warmup: usize, iters: usize) -> Duration {
         f();
     }
     t0.elapsed() / iters as u32
-}
-
-// ── GPU dispatch helpers ──────────────────────────────────────────────────────
-//
-// `hip_segmented_sum` is called with `stream = null` so that it runs on the
-// HIP null (default) stream.  `HipBackend::download_slice` uses `hipMemcpy`
-// (synchronous), which on the null stream is ordered after the async kernel
-// launch — no explicit `hipDeviceSynchronize` is needed.
-
-#[cfg(all(feature = "hip", hip_rocm))]
-fn gpu_reduce_f32(data_ptr: *const f32, offsets_ptr: *const i64, out_ptr: *mut f32, k: usize) {
-    hip_segmented_sum(
-        data_ptr,
-        offsets_ptr,
-        out_ptr,
-        k as i64,
-        HipDtype::F32,
-        std::ptr::null_mut(), // null stream — serialised with hipMemcpy below
-    );
-}
-
-#[cfg(all(feature = "hip", hip_rocm))]
-fn gpu_reduce_i64(data_ptr: *const i64, offsets_ptr: *const i64, out_ptr: *mut i64, k: usize) {
-    hip_segmented_sum(
-        data_ptr,
-        offsets_ptr,
-        out_ptr,
-        k as i64,
-        HipDtype::I64,
-        std::ptr::null_mut(),
-    );
 }
 
 // ── Table printer ─────────────────────────────────────────────────────────────
@@ -227,17 +194,16 @@ fn run() {
         );
 
         // ── gpu_rnd: full round-trip per iteration ────────────────────────
+        // H2D upload + kernel dispatch + D2H download; hipFree on drop.
         let gpu_rnd = time_iters(
             || {
                 let dev_data = backend.upload_slice(&data);
                 let dev_offsets = backend.upload_slice(&offsets);
                 let mut dev_out = unsafe { backend.alloc_slice::<f32>(k) };
-                gpu_reduce_f32(
-                    dev_data.ptr as *const f32,
-                    dev_offsets.ptr as *const i64,
-                    dev_out.ptr as *mut f32,
-                    k,
-                );
+                segmented_sum_f32(&backend, &dev_data, &dev_offsets, &mut dev_out, k as i64)
+                    .expect("HIP reduce_sum_f32 round-trip failed");
+                // hipMemcpy (synchronous on null stream) — ordered after the
+                // async kernel launch, so no explicit hipDeviceSynchronize needed.
                 backend.download_slice(&dev_out, &mut out_host);
                 // DevSlices drop here → hipFree
             },
@@ -250,16 +216,10 @@ fn run() {
         let dev_offsets = backend.upload_slice(&offsets);
         let mut dev_out = unsafe { backend.alloc_slice::<f32>(k) };
 
-        // Capture raw pointers so the closure doesn't need to borrow
-        // `dev_out` mutably while also owning it.
-        let d_ptr = dev_data.ptr as *const f32;
-        let off_ptr = dev_offsets.ptr as *const i64;
-        let out_ptr = dev_out.ptr as *mut f32;
-
         let gpu_disp = time_iters(
             || {
-                gpu_reduce_f32(d_ptr, off_ptr, out_ptr, k);
-                // hipMemcpy (synchronous) — serialises after the async kernel.
+                segmented_sum_f32(&backend, &dev_data, &dev_offsets, &mut dev_out, k as i64)
+                    .expect("HIP reduce_sum_f32 dispatch failed");
                 backend.download_slice(&dev_out, &mut out_host);
             },
             WARMUP,
@@ -294,12 +254,8 @@ fn run() {
                 let dev_data = backend.upload_slice(&data);
                 let dev_offsets = backend.upload_slice(&offsets);
                 let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
-                gpu_reduce_i64(
-                    dev_data.ptr as *const i64,
-                    dev_offsets.ptr as *const i64,
-                    dev_out.ptr as *mut i64,
-                    k,
-                );
+                segmented_sum_i64(&backend, &dev_data, &dev_offsets, &mut dev_out, k as i64)
+                    .expect("HIP reduce_sum_i64 round-trip failed");
                 backend.download_slice(&dev_out, &mut out_host);
             },
             WARMUP,
@@ -311,13 +267,10 @@ fn run() {
         let dev_offsets = backend.upload_slice(&offsets);
         let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
 
-        let d_ptr = dev_data.ptr as *const i64;
-        let off_ptr = dev_offsets.ptr as *const i64;
-        let out_ptr = dev_out.ptr as *mut i64;
-
         let gpu_disp = time_iters(
             || {
-                gpu_reduce_i64(d_ptr, off_ptr, out_ptr, k);
+                segmented_sum_i64(&backend, &dev_data, &dev_offsets, &mut dev_out, k as i64)
+                    .expect("HIP reduce_sum_i64 dispatch failed");
                 backend.download_slice(&dev_out, &mut out_host);
             },
             WARMUP,
