@@ -91,3 +91,10 @@ harness = false
 # No required-features: Metal is auto-enabled on macOS via cfg(target_os = "macos").
 # The CPU groups run on all platforms; Metal groups are no-ops elsewhere.
 
+[[bench]]
+name = "reduce_sum_hip"
+harness = false
+required-features = ["hip"]
+# Run on della-milan: cargo bench --features hip --bench reduce_sum_hip
+# Sizes and LCG seed match reduce_sum_metal.rs for direct cross-machine comparison.
+
