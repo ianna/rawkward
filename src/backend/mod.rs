@@ -6,6 +6,8 @@ pub mod device_slice;
 pub mod error;
 #[cfg(all(feature = "hip", hip_rocm))]
 pub mod hip;
+#[cfg(target_os = "macos")]
+pub mod metal;
 pub mod stream;
 pub mod traits;
 
@@ -17,17 +19,23 @@ pub use cuda::CudaBackend;
 pub use error::GpuError;
 #[cfg(all(feature = "hip", hip_rocm))]
 pub use hip::HipBackend;
+#[cfg(target_os = "macos")]
+pub use metal::MetalBackend;
 
 pub enum BackendKind {
     #[cfg(all(feature = "hip", hip_rocm))]
     Hip,
     Cuda,
+    #[cfg(target_os = "macos")]
+    Metal,
 }
 
 pub enum BackendInner {
     #[cfg(all(feature = "hip", hip_rocm))]
     Hip(HipBackend),
     Cuda(CudaBackend),
+    #[cfg(target_os = "macos")]
+    Metal(MetalBackend),
 }
 
 pub struct Backend {
@@ -46,6 +54,11 @@ impl Backend {
             BackendKind::Cuda => Ok(Self {
                 kind,
                 inner: BackendInner::Cuda(CudaBackend::new()?),
+            }),
+            #[cfg(target_os = "macos")]
+            BackendKind::Metal => Ok(Self {
+                kind,
+                inner: BackendInner::Metal(MetalBackend::new()?),
             }),
         }
     }

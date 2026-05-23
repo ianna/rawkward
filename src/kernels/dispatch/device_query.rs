@@ -20,3 +20,14 @@ pub fn simd_available() -> bool {
     // For now, assume SIMD is always available.
     true
 }
+
+pub fn metal_available() -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        metal::Device::system_default().is_some()
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        false
+    }
+}

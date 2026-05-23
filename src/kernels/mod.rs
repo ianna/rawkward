@@ -13,8 +13,13 @@
 
 pub mod cpu;
 pub mod cuda;
+
 #[cfg(all(feature = "hip", hip_rocm))]
 pub mod hip;
+
+#[cfg(target_os = "macos")]
+pub mod metal;
+
 pub mod simd;
 
 pub mod dispatch;

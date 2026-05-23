@@ -42,6 +42,7 @@ fn main() {
     // 4. Rebuild triggers
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=Cargo.toml");
+    println!("cargo:rerun-if-changed=src/kernels/metal/kernels.metal");
     // Note: awkward_bench_wrappers.cpp and individual kernel sources are
     // registered inside compile_awkward_bench_cxx when bench-cxx is on.
     println!("cargo:rerun-if-env-changed=HIP_PATH");
