@@ -131,9 +131,9 @@ fn bench_reduce_sum_f32(c: &mut Criterion) {
     let mut group = c.benchmark_group("reduce_sum_f32");
 
     for &(n, k) in SIZES {
-        let data    = make_data_f32(n);
+        let data = make_data_f32(n);
         let offsets = make_offsets_contig(n, k);
-        let label   = format!("{n}/{k}");
+        let label = format!("{n}/{k}");
 
         group.throughput(Throughput::Elements(n as u64));
 
@@ -168,9 +168,12 @@ fn bench_reduce_sum_f32(c: &mut Criterion) {
             // Data is already in a StorageModeShared buffer — no transfer cost.
             {
                 #[cfg(target_os = "macos")]
-                if let (Some(ref b), Some(ref d), Some(ref o), Some(ref mut out)) =
-                    (backend.as_ref(), data_dev.as_ref(), offsets_dev.as_ref(), out_dev.as_mut())
-                {
+                if let (Some(ref b), Some(ref d), Some(ref o), Some(ref mut out)) = (
+                    backend.as_ref(),
+                    data_dev.as_ref(),
+                    offsets_dev.as_ref(),
+                    out_dev.as_mut(),
+                ) {
                     use rawkward::kernels::metal::reduce::sum::segmented_sum_f32;
                     unsafe {
                         segmented_sum_f32(
@@ -210,9 +213,9 @@ fn bench_reduce_sum_i64(c: &mut Criterion) {
     let mut group = c.benchmark_group("reduce_sum_i64");
 
     for &(n, k) in SIZES {
-        let data    = make_data_i64(n);
+        let data = make_data_i64(n);
         let offsets = make_offsets_contig(n, k);
-        let label   = format!("{n}/{k}");
+        let label = format!("{n}/{k}");
 
         group.throughput(Throughput::Elements(n as u64));
 
@@ -241,9 +244,12 @@ fn bench_reduce_sum_i64(c: &mut Criterion) {
             // ── Metal ────────────────────────────────────────────────────────
             {
                 #[cfg(target_os = "macos")]
-                if let (Some(ref b), Some(ref d), Some(ref o), Some(ref mut out)) =
-                    (backend.as_ref(), data_dev.as_ref(), offsets_dev.as_ref(), out_dev.as_mut())
-                {
+                if let (Some(ref b), Some(ref d), Some(ref o), Some(ref mut out)) = (
+                    backend.as_ref(),
+                    data_dev.as_ref(),
+                    offsets_dev.as_ref(),
+                    out_dev.as_mut(),
+                ) {
                     use rawkward::kernels::metal::reduce::sum::segmented_sum_i64;
                     unsafe {
                         segmented_sum_i64(
@@ -302,9 +308,9 @@ fn bench_reduce_sum_f32_roundtrip(c: &mut Criterion) {
     let mut group = c.benchmark_group("reduce_sum_f32_roundtrip");
 
     for &(n, k) in SIZES {
-        let data    = make_data_f32(n);
+        let data = make_data_f32(n);
         let offsets = make_offsets_contig(n, k);
-        let label   = format!("{n}/{k}");
+        let label = format!("{n}/{k}");
 
         group.throughput(Throughput::Elements(n as u64));
 
@@ -318,7 +324,7 @@ fn bench_reduce_sum_f32_roundtrip(c: &mut Criterion) {
                 b.iter_batched_ref(
                     || (),
                     |_| {
-                        let data_dev    = backend.upload_slice(black_box(&data));
+                        let data_dev = backend.upload_slice(black_box(&data));
                         let offsets_dev = backend.upload_slice(black_box(&offsets));
                         let mut out_dev = unsafe { backend.alloc_slice::<f32>(k) };
                         unsafe {
@@ -356,14 +362,14 @@ fn bench_reduce_sum_f32_roundtrip(c: &mut Criterion) {
         //   • `offsets_dev` is read-only for the GPU and never written
         //     during a bench iteration, so no data races arise.
         {
-            let     data_dev    = backend.upload_slice(&data);
-            let     offsets_dev = backend.upload_slice(&offsets);
-            let mut out_dev     = unsafe { backend.alloc_slice::<f32>(k) };
+            let data_dev = backend.upload_slice(&data);
+            let offsets_dev = backend.upload_slice(&offsets);
+            let mut out_dev = unsafe { backend.alloc_slice::<f32>(k) };
 
             // Raw CPU pointers into the unified memory buffers.
-            let src_ptr: *const f32 = data.as_ptr();            // host source
-            let buf_ptr: *mut   f32 = data_dev.ptr as *mut f32; // shared input
-            let out_ptr: *const f32 = out_dev.ptr  as *const f32; // shared output
+            let src_ptr: *const f32 = data.as_ptr(); // host source
+            let buf_ptr: *mut f32 = data_dev.ptr as *mut f32; // shared input
+            let out_ptr: *const f32 = out_dev.ptr as *const f32; // shared output
 
             group.bench_with_input(BenchmarkId::new("metal_unified", &label), &(), |b, _| {
                 b.iter_batched_ref(

@@ -51,7 +51,11 @@ impl MetalKernelRegistry {
     }
 
     /// Returns a cached `ComputePipelineState`, building it on first use.
-    pub fn get_pipeline(&self, device: &Device, name: &str) -> Result<ComputePipelineState, String> {
+    pub fn get_pipeline(
+        &self,
+        device: &Device,
+        name: &str,
+    ) -> Result<ComputePipelineState, String> {
         let mut cache = self.pipelines.lock().unwrap();
 
         if let Some(pipeline) = cache.get(name) {

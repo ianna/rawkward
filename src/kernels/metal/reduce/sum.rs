@@ -39,9 +39,9 @@
 
 use metal::{Buffer, CommandQueue, Device, MTLSize};
 
-use crate::backend::metal::buffer_of;
 use crate::backend::DevSlice;
 use crate::backend::metal::MetalBackend;
+use crate::backend::metal::buffer_of;
 use crate::kernels::metal::MetalKernelRegistry;
 
 // ---------------------------------------------------------------------------
@@ -186,9 +186,11 @@ pub unsafe fn segmented_sum_f64(
     out: &mut DevSlice<f64>,
     n_segments: u64,
 ) -> Result<(), String> {
-    Err("segmented_sum_f64: Metal does not support double-precision (f64) \
+    Err(
+        "segmented_sum_f64: Metal does not support double-precision (f64) \
          compute shaders on any Apple GPU. Use the CPU kernel instead."
-        .to_string())
+            .to_string(),
+    )
 }
 
 /// Sum `i32` data per segment.
@@ -266,7 +268,7 @@ mod tests {
     macro_rules! round_trip {
         ($backend:expr, $data:expr, $offsets:expr, $n:expr, $fn:ident, $T:ty) => {{
             let b = &$backend;
-            let data_dev    = b.upload_slice::<$T>($data);
+            let data_dev = b.upload_slice::<$T>($data);
             let offsets_dev = b.upload_slice::<i64>($offsets);
             let mut out_dev = unsafe { b.alloc_slice::<$T>($n as usize) };
             unsafe { $fn(b, &data_dev, &offsets_dev, &mut out_dev, $n).unwrap() };
@@ -278,10 +280,10 @@ mod tests {
 
     #[test]
     fn f32_two_segments() {
-        let backend  = make_backend();
-        let data     = [1.0f32, 2.0, 3.0, 4.0];
-        let offsets  = [0i64, 2, 4];
-        let result   = round_trip!(backend, &data, &offsets, 2, segmented_sum_f32, f32);
+        let backend = make_backend();
+        let data = [1.0f32, 2.0, 3.0, 4.0];
+        let offsets = [0i64, 2, 4];
+        let result = round_trip!(backend, &data, &offsets, 2, segmented_sum_f32, f32);
         assert!((result[0] - 3.0).abs() < 1e-6, "got {}", result[0]);
         assert!((result[1] - 7.0).abs() < 1e-6, "got {}", result[1]);
     }
@@ -291,15 +293,14 @@ mod tests {
         // Metal does not support double-precision shaders on any Apple GPU.
         // segmented_sum_f64 must return Err rather than crashing or silently
         // producing wrong results.
-        let backend     = make_backend();
-        let data        = [1.5f64, 2.5, 3.0];
-        let offsets     = [0i64, 3];
-        let data_dev    = backend.upload_slice::<f64>(&data);
+        let backend = make_backend();
+        let data = [1.5f64, 2.5, 3.0];
+        let offsets = [0i64, 3];
+        let data_dev = backend.upload_slice::<f64>(&data);
         let offsets_dev = backend.upload_slice::<i64>(&offsets);
         let mut out_dev = unsafe { backend.alloc_slice::<f64>(1) };
-        let result = unsafe {
-            segmented_sum_f64(&backend, &data_dev, &offsets_dev, &mut out_dev, 1)
-        };
+        let result =
+            unsafe { segmented_sum_f64(&backend, &data_dev, &offsets_dev, &mut out_dev, 1) };
         assert!(result.is_err(), "expected Err for unsupported f64, got Ok");
         let msg = result.unwrap_err();
         assert!(
@@ -310,30 +311,30 @@ mod tests {
 
     #[test]
     fn i32_empty_segment() {
-        let backend  = make_backend();
-        let data     = [10i32, 20];
-        let offsets  = [0i64, 2, 2]; // second segment is empty
-        let result   = round_trip!(backend, &data, &offsets, 2, segmented_sum_i32, i32);
+        let backend = make_backend();
+        let data = [10i32, 20];
+        let offsets = [0i64, 2, 2]; // second segment is empty
+        let result = round_trip!(backend, &data, &offsets, 2, segmented_sum_i32, i32);
         assert_eq!(result[0], 30);
         assert_eq!(result[1], 0);
     }
 
     #[test]
     fn i64_many_segments() {
-        let backend  = make_backend();
+        let backend = make_backend();
         // 4 segments of 1 element each
-        let data     = [1i64, 2, 3, 4];
-        let offsets  = [0i64, 1, 2, 3, 4];
-        let result   = round_trip!(backend, &data, &offsets, 4, segmented_sum_i64, i64);
+        let data = [1i64, 2, 3, 4];
+        let offsets = [0i64, 1, 2, 3, 4];
+        let result = round_trip!(backend, &data, &offsets, 4, segmented_sum_i64, i64);
         assert_eq!(result, [1, 2, 3, 4]);
     }
 
     #[test]
     fn zero_segments_is_noop() {
-        let backend  = make_backend();
+        let backend = make_backend();
         let data: [f32; 0] = [];
-        let offsets  = [0i64];
-        let result   = round_trip!(backend, &data, &offsets, 0, segmented_sum_f32, f32);
+        let offsets = [0i64];
+        let result = round_trip!(backend, &data, &offsets, 0, segmented_sum_f32, f32);
         assert!(result.is_empty());
     }
 }

@@ -76,8 +76,7 @@ impl MetalBackend {
     pub fn new() -> Result<Self, GpuError> {
         let device = Device::system_default().ok_or(GpuError::InitializationFailed)?;
         let queue = device.new_command_queue();
-        let registry =
-            MetalKernelRegistry::new(&device).map_err(GpuError::MetalError)?;
+        let registry = MetalKernelRegistry::new(&device).map_err(GpuError::MetalError)?;
 
         Ok(Self {
             device,
@@ -113,18 +112,16 @@ impl GpuBackend for MetalBackend {
             );
         }
 
-        let buffer = self.device.new_buffer(
-            bytes as u64,
-            MTLResourceOptions::StorageModeShared,
-        );
+        let buffer = self
+            .device
+            .new_buffer(bytes as u64, MTLResourceOptions::StorageModeShared);
 
         // `buffer.contents()` is the CPU-visible pointer into unified memory.
         let payload_ptr = buffer.contents() as *mut c_void;
 
         // Box the allocation tracker so the Metal buffer stays alive until the
         // DevSlice is dropped, at which point `metal_free` runs.
-        let free_data =
-            Box::into_raw(Box::new(MetalAllocation { _buffer: buffer })) as *mut c_void;
+        let free_data = Box::into_raw(Box::new(MetalAllocation { _buffer: buffer })) as *mut c_void;
 
         DevSlice::new_with_free_data(payload_ptr, len, free_data, metal_free)
     }
@@ -146,17 +143,19 @@ impl GpuBackend for MetalBackend {
         // metal 0.29 has no `new_buffer_with_bytes` (copying variant).  Allocate
         // a shared-mode buffer then memcpy the host data in — valid because
         // StorageModeShared exposes the same physical pages to both CPU and GPU.
-        let buffer = self.device.new_buffer(
-            bytes as u64,
-            MTLResourceOptions::StorageModeShared,
-        );
+        let buffer = self
+            .device
+            .new_buffer(bytes as u64, MTLResourceOptions::StorageModeShared);
         let payload_ptr = buffer.contents() as *mut c_void;
         unsafe {
-            std::ptr::copy_nonoverlapping(host.as_ptr() as *const u8, payload_ptr as *mut u8, bytes);
+            std::ptr::copy_nonoverlapping(
+                host.as_ptr() as *const u8,
+                payload_ptr as *mut u8,
+                bytes,
+            );
         }
 
-        let free_data =
-            Box::into_raw(Box::new(MetalAllocation { _buffer: buffer })) as *mut c_void;
+        let free_data = Box::into_raw(Box::new(MetalAllocation { _buffer: buffer })) as *mut c_void;
 
         DevSlice::new_with_free_data(payload_ptr, host.len(), free_data, metal_free)
     }
