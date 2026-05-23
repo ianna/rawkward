@@ -265,13 +265,26 @@ fn bench_reduce_sum_i64(c: &mut Criterion) {
 
 // ── round-trip bench (upload + dispatch + download) ───────────────────────────
 //
-// Measures the FULL cost of using the GPU from a CPU-side caller that does not
-// keep data persistently resident on the device.  Useful for understanding the
-// break-even point: at which problem size does GPU compute outweigh the
-// round-trip overhead?
+// Two variants that isolate WHERE the round-trip overhead comes from.
 //
-// Only meaningful on macOS; the CPU side is omitted here since its cost is
-// already captured in `bench_reduce_sum_f32`.
+// metal_alloc   — allocates fresh Metal buffers every iteration via
+//                 `upload_slice` / `alloc_slice`.  This is the worst-case
+//                 cold-start cost: three `MTLDevice newBuffer…` Obj-C calls
+//                 plus the data memcpy.
+//
+// metal_unified — pre-allocates `StorageModeShared` buffers ONCE.  On Apple
+//                 Silicon, CPU and GPU share the same physical pages, so
+//                 writing `data` into `data_dev.ptr` IS the upload — a plain
+//                 memcpy into already-mapped unified memory with no Metal API
+//                 overhead.  The result is read directly from `out_dev.ptr`
+//                 after `wait_until_completed`; again, no Metal API call.
+//
+//                 Expected saving: the three `new_buffer` allocation calls
+//                 (empirically ~350 µs for the 1 M-element case) disappear;
+//                 only the memcpy bandwidth and GPU compute remain.
+//
+// Only meaningful on macOS; the CPU side is already captured in
+// `bench_reduce_sum_f32`.
 
 #[cfg(target_os = "macos")]
 fn bench_reduce_sum_f32_roundtrip(c: &mut Criterion) {
@@ -295,33 +308,91 @@ fn bench_reduce_sum_f32_roundtrip(c: &mut Criterion) {
 
         group.throughput(Throughput::Elements(n as u64));
 
-        let mut out_host = vec![0.0f32; k];
+        // ── metal_alloc: allocate new Metal buffers every iteration ───────────
+        // Models a caller that holds no persistent GPU state (cold-start).
+        // Cost = 3× newBuffer API calls + memcpy + GPU dispatch + memcpy back.
+        {
+            let mut out_host = vec![0.0f32; k];
 
-        group.bench_with_input(BenchmarkId::new("metal", &label), &(), |b, _| {
-            b.iter_batched_ref(
-                || (),
-                |_| {
-                    // upload
-                    let data_dev    = backend.upload_slice(black_box(&data));
-                    let offsets_dev = backend.upload_slice(black_box(&offsets));
-                    let mut out_dev = unsafe { backend.alloc_slice::<f32>(k) };
-                    // dispatch + wait
-                    unsafe {
-                        segmented_sum_f32(
-                            &backend,
-                            &data_dev,
-                            &offsets_dev,
-                            &mut out_dev,
-                            k as u64,
-                        )
-                        .expect("Metal reduce_sum_f32 roundtrip failed");
-                    }
-                    // download
-                    backend.download_slice(&out_dev, black_box(&mut out_host));
-                },
-                BatchSize::SmallInput,
-            )
-        });
+            group.bench_with_input(BenchmarkId::new("metal_alloc", &label), &(), |b, _| {
+                b.iter_batched_ref(
+                    || (),
+                    |_| {
+                        let data_dev    = backend.upload_slice(black_box(&data));
+                        let offsets_dev = backend.upload_slice(black_box(&offsets));
+                        let mut out_dev = unsafe { backend.alloc_slice::<f32>(k) };
+                        unsafe {
+                            segmented_sum_f32(
+                                &backend,
+                                &data_dev,
+                                &offsets_dev,
+                                &mut out_dev,
+                                k as u64,
+                            )
+                            .expect("Metal reduce_sum_f32 alloc roundtrip failed");
+                        }
+                        backend.download_slice(&out_dev, black_box(&mut out_host));
+                    },
+                    BatchSize::SmallInput,
+                )
+            });
+        }
+
+        // ── metal_unified: persistent shared buffers, direct pointer access ───
+        // Models a caller that keeps GPU buffers alive across invocations.
+        //
+        // `DevSlice::ptr` for a StorageModeShared buffer IS the CPU-visible
+        // unified memory address — the same physical pages the GPU reads and
+        // writes.  No Metal API call is needed to "upload" or "download";
+        // the CPU just writes/reads through the pointer.
+        //
+        // Safety invariants maintained here:
+        //   • Metal guarantees StorageModeShared buffers are never relocated
+        //     while live, so raw pointers derived from `DevSlice::ptr` remain
+        //     valid for the lifetime of the owning DevSlice.
+        //   • `segmented_sum_f32` calls `wait_until_completed` before
+        //     returning, so GPU writes to `out_dev` are visible to the CPU
+        //     the moment the function returns.
+        //   • `offsets_dev` is read-only for the GPU and never written
+        //     during a bench iteration, so no data races arise.
+        {
+            let     data_dev    = backend.upload_slice(&data);
+            let     offsets_dev = backend.upload_slice(&offsets);
+            let mut out_dev     = unsafe { backend.alloc_slice::<f32>(k) };
+
+            // Raw CPU pointers into the unified memory buffers.
+            let src_ptr: *const f32 = data.as_ptr();            // host source
+            let buf_ptr: *mut   f32 = data_dev.ptr as *mut f32; // shared input
+            let out_ptr: *const f32 = out_dev.ptr  as *const f32; // shared output
+
+            group.bench_with_input(BenchmarkId::new("metal_unified", &label), &(), |b, _| {
+                b.iter_batched_ref(
+                    || (),
+                    |_| {
+                        // "Upload": memcpy into the pre-existing shared buffer.
+                        // No Metal API call — just CPU memcpy to unified memory.
+                        unsafe {
+                            std::ptr::copy_nonoverlapping(black_box(src_ptr), buf_ptr, n);
+                        }
+                        // Dispatch + wait_until_completed.
+                        unsafe {
+                            segmented_sum_f32(
+                                &backend,
+                                &data_dev,
+                                &offsets_dev,
+                                &mut out_dev,
+                                k as u64,
+                            )
+                            .expect("Metal reduce_sum_f32 unified roundtrip failed");
+                        }
+                        // "Download": direct pointer read from unified memory.
+                        // GPU has completed (wait_until_completed already issued).
+                        black_box(unsafe { std::slice::from_raw_parts(out_ptr, k) });
+                    },
+                    BatchSize::SmallInput,
+                )
+            });
+        }
     }
 
     group.finish();
