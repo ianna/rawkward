@@ -23,25 +23,25 @@ use std::os::raw::{c_int, c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_indexed_array_flatten_nextcarry(
-        tocarry:    *mut c_longlong,
-        fromindex:  *const c_void,
-        length:     c_longlong,
+        tocarry: *mut c_longlong,
+        fromindex: *const c_void,
+        length: c_longlong,
         lencontent: c_longlong,
-        out_count:  *mut c_longlong,
-        out_error:  *mut c_int,
+        out_count: *mut c_longlong,
+        out_error: *mut c_int,
         dtype_code: c_int,
-        stream:     *mut c_void,
+        stream: *mut c_void,
     );
 
     fn awkward_hip_indexed_array_flatten_none2empty(
-        outoffsets:      *mut c_longlong,
-        outindex:        *const c_void,
-        offsets:         *const c_longlong,
-        outindexlength:  c_longlong,
-        offsetslength:   c_longlong,
-        out_error:       *mut c_int,
-        dtype_code:      c_int,
-        stream:          *mut c_void,
+        outoffsets: *mut c_longlong,
+        outindex: *const c_void,
+        offsets: *const c_longlong,
+        outindexlength: c_longlong,
+        offsetslength: c_longlong,
+        out_error: *mut c_int,
+        dtype_code: c_int,
+        stream: *mut c_void,
     );
 }
 
@@ -58,14 +58,14 @@ pub enum FlattenDtype {
 ///
 /// `out_count` (device i64) receives the number of entries written.
 pub fn hip_indexed_array_flatten_nextcarry(
-    tocarry:    *mut i64,
-    fromindex:  *const c_void,
-    length:     i64,
+    tocarry: *mut i64,
+    fromindex: *const c_void,
+    length: i64,
     lencontent: i64,
-    out_count:  *mut i64,
-    out_error:  *mut i32,
-    dtype:      FlattenDtype,
-    stream:     *mut c_void,
+    out_count: *mut i64,
+    out_error: *mut i32,
+    dtype: FlattenDtype,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_indexed_array_flatten_nextcarry(
@@ -83,14 +83,14 @@ pub fn hip_indexed_array_flatten_nextcarry(
 
 /// Build output offsets for flatten-none-to-empty.
 pub fn hip_indexed_array_flatten_none2empty(
-    outoffsets:     *mut i64,
-    outindex:       *const c_void,
-    offsets:        *const i64,
+    outoffsets: *mut i64,
+    outindex: *const c_void,
+    offsets: *const i64,
     outindexlength: i64,
-    offsetslength:  i64,
-    out_error:      *mut i32,
-    dtype:          FlattenDtype,
-    stream:         *mut c_void,
+    offsetslength: i64,
+    out_error: *mut i32,
+    dtype: FlattenDtype,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_indexed_array_flatten_none2empty(

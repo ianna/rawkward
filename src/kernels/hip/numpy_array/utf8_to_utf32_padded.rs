@@ -21,13 +21,13 @@ use std::os::raw::{c_int, c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_utf8_to_utf32_padded(
-        fromptr:       *const u8,
-        fromoffsets:   *const c_longlong,
+        fromptr: *const u8,
+        fromoffsets: *const c_longlong,
         offsetslength: c_longlong,
         maxcodepoints: c_longlong,
-        toptr:         *mut u32,
-        out_error:     *mut c_int,    // device pointer; zero-init before call
-        stream:        *mut c_void,
+        toptr: *mut u32,
+        out_error: *mut c_int, // device pointer; zero-init before call
+        stream: *mut c_void,
     );
 }
 
@@ -36,13 +36,13 @@ unsafe extern "C" {
 /// `out_error` is a device pointer to an `i32`; zero-init before the call.
 /// Non-zero after the call means sublist `*out_error - 1` had invalid UTF-8.
 pub fn hip_utf8_to_utf32_padded(
-    fromptr:       *const u8,
-    fromoffsets:   *const i64,
+    fromptr: *const u8,
+    fromoffsets: *const i64,
     offsetslength: i64,
     maxcodepoints: i64,
-    toptr:         *mut u32,
-    out_error:     *mut i32,
-    stream:        *mut c_void,
+    toptr: *mut u32,
+    out_error: *mut i32,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_utf8_to_utf32_padded(

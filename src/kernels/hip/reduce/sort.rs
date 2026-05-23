@@ -10,8 +10,8 @@
 //! sorted values of segment `seg` in ascending order.
 //! Lists longer than 4096 elements are silently left unchanged.
 
-use std::os::raw::{c_void, c_int, c_longlong};
 use crate::kernels::hip::reduce::HipDtype;
+use std::os::raw::{c_int, c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_segmented_sort(

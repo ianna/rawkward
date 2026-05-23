@@ -20,8 +20,8 @@ use std::os::raw::{c_int, c_longlong, c_void};
 #[derive(Debug, Clone, Copy)]
 #[repr(i32)]
 pub enum SubrangeEqualDtype {
-    I8  = 0,
-    U8  = 1,
+    I8 = 0,
+    U8 = 1,
     I16 = 2,
     U16 = 3,
     I32 = 4,
@@ -34,13 +34,13 @@ pub enum SubrangeEqualDtype {
 
 unsafe extern "C" {
     fn awkward_hip_subrange_equal(
-        tmpptr:     *const c_void,
+        tmpptr: *const c_void,
         fromstarts: *const c_longlong,
-        fromstops:  *const c_longlong,
-        length:     c_longlong,
-        out_equal:  *mut c_int,       // device pointer; 1=equal, 0=not equal
+        fromstops: *const c_longlong,
+        length: c_longlong,
+        out_equal: *mut c_int, // device pointer; 1=equal, 0=not equal
         dtype_code: c_int,
-        stream:     *mut c_void,
+        stream: *mut c_void,
     );
 }
 
@@ -48,19 +48,19 @@ unsafe extern "C" {
 ///
 /// `out_equal` is a device `i32` pointer: `1` = all pairs equal, `0` = differ.
 pub fn hip_subrange_equal<T>(
-    tmpptr:     *const T,
+    tmpptr: *const T,
     fromstarts: *const i64,
-    fromstops:  *const i64,
-    length:     i64,
-    out_equal:  *mut i32,
-    dtype:      SubrangeEqualDtype,
-    stream:     *mut c_void,
+    fromstops: *const i64,
+    length: i64,
+    out_equal: *mut i32,
+    dtype: SubrangeEqualDtype,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_subrange_equal(
             tmpptr as *const c_void,
             fromstarts as *const c_longlong,
-            fromstops  as *const c_longlong,
+            fromstops as *const c_longlong,
             length as c_longlong,
             out_equal as *mut c_int,
             dtype as c_int,

@@ -25,23 +25,23 @@ pub enum IndexDtype {
 
 unsafe extern "C" {
     fn awkward_hip_indexed_array_overlay_mask(
-        toindex:    *mut c_longlong,
-        mask:       *const i8,
-        fromindex:  *const c_void,
-        length:     c_longlong,
+        toindex: *mut c_longlong,
+        mask: *const i8,
+        fromindex: *const c_void,
+        length: c_longlong,
         dtype_code: c_int,
-        stream:     *mut c_void,
+        stream: *mut c_void,
     );
 }
 
 /// Apply a byte mask to an index array; masked positions become -1.
 pub fn hip_indexed_array_overlay_mask(
-    toindex:    *mut i64,
-    mask:       *const i8,
-    fromindex:  *const c_void,
-    length:     i64,
-    dtype:      IndexDtype,
-    stream:     *mut c_void,
+    toindex: *mut i64,
+    mask: *const i8,
+    fromindex: *const c_void,
+    length: i64,
+    dtype: IndexDtype,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_indexed_array_overlay_mask(

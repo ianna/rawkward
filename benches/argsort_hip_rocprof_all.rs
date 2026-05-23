@@ -19,21 +19,24 @@
 //! where counters.txt lists metric names, e.g.:
 //!   pmc: TCC_HIT_sum, TCC_MISS_sum, FETCH_SIZE, WRITE_SIZE
 
-use rand::Rng;
+#[allow(unused_imports)]
 use rayon::prelude::*;
+
+#[cfg(all(feature = "hip", hip_rocm))]
 use std::time::{Duration, Instant};
 
-#[cfg(feature = "hip")]
+#[cfg(all(feature = "hip", hip_rocm))]
 use rawkward::backend::hip::HipBackend;
-#[cfg(feature = "hip")]
+#[cfg(all(feature = "hip", hip_rocm))]
 use rawkward::backend::{GpuBackend, GpuError};
-#[cfg(feature = "hip")]
+#[cfg(all(feature = "hip", hip_rocm))]
 use rawkward::kernels::hip::sort::argsort::{argsort_large, argsort_medium, argsort_small};
 
 // ---------------------------------------------------------------------------
 // Data generation
 // ---------------------------------------------------------------------------
 
+#[cfg(all(feature = "hip", hip_rocm))]
 fn generate_jagged(nlists: usize, min_len: usize, max_len: usize) -> (Vec<f32>, Vec<i64>) {
     let mut rng = rand::thread_rng();
     let mut values = Vec::new();
@@ -55,6 +58,7 @@ fn generate_jagged(nlists: usize, min_len: usize, max_len: usize) -> (Vec<f32>, 
 // ---------------------------------------------------------------------------
 
 /// Single-threaded argsort over a jagged array.
+#[cfg(all(feature = "hip", hip_rocm))]
 fn cpu_argsort_serial(values: &[f32], offsets: &[i64], out: &mut [i64]) {
     let nlists = offsets.len() - 1;
     for i in 0..nlists {
@@ -75,6 +79,7 @@ fn cpu_argsort_serial(values: &[f32], offsets: &[i64], out: &mut [i64]) {
 /// Sorts each list independently in parallel, collecting results into
 /// intermediate Vecs before copying back. The copy is O(n) serial but
 /// sort time dominates for any non-trivial list length.
+#[cfg(all(feature = "hip", hip_rocm))]
 fn cpu_argsort_parallel(values: &[f32], offsets: &[i64], out: &mut [i64]) {
     let nlists = offsets.len() - 1;
 
@@ -113,7 +118,7 @@ fn cpu_argsort_parallel(values: &[f32], offsets: &[i64], out: &mut [i64]) {
 ///   large  launch: grid = (256,                1, 1), block = (256, 1, 1)
 ///
 /// H2D and D2H transfers are amortised across all three launches.
-#[cfg(feature = "hip")]
+#[cfg(all(feature = "hip", hip_rocm))]
 fn gpu_argsort_jagged<B: GpuBackend>(
     backend: &B,
     values: &[f32],
@@ -173,6 +178,7 @@ fn gpu_argsort_jagged<B: GpuBackend>(
 // Timing helpers
 // ---------------------------------------------------------------------------
 
+#[cfg(all(feature = "hip", hip_rocm))]
 fn time_iters<F: FnMut()>(mut f: F, warmup: usize, iters: usize) -> Duration {
     for _ in 0..warmup {
         f();
@@ -189,13 +195,12 @@ fn time_iters<F: FnMut()>(mut f: F, warmup: usize, iters: usize) -> Duration {
 // ---------------------------------------------------------------------------
 
 fn main() {
-    #[cfg(not(feature = "hip"))]
+    #[cfg(not(all(feature = "hip", hip_rocm)))]
     {
-        eprintln!("Build with --features hip to enable GPU comparison.");
-        return;
+        eprintln!("Build with --features hip on a machine with ROCm to enable GPU comparison.");
     }
 
-    #[cfg(feature = "hip")]
+    #[cfg(all(feature = "hip", hip_rocm))]
     {
         let backend = HipBackend::new();
 

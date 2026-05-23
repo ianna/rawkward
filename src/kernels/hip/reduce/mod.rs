@@ -6,14 +6,14 @@
 pub use sum::HipDtype;
 
 // Scalar reducers — output has one element per segment
-pub mod sum;
-pub mod min;
-pub mod max;
-pub mod argmin;
 pub mod argmax;
-pub mod prod;
+pub mod argmin;
 pub mod count;
 pub mod countnonzero;
+pub mod max;
+pub mod min;
+pub mod prod;
+pub mod sum;
 pub mod unique_offsets;
 
 // Data-level operations — output has one element per input data position

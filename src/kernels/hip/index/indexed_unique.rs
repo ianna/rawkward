@@ -15,30 +15,30 @@ use std::os::raw::{c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_indexed_array_unique_next_index_and_offsets(
-        toindex:       *mut c_longlong,
-        tooffsets:     *mut c_longlong,
-        fromoffsets:   *const c_longlong,
-        fromnulls:     *const c_longlong,
-        startslength:  c_longlong,
-        stream:        *mut c_void,
+        toindex: *mut c_longlong,
+        tooffsets: *mut c_longlong,
+        fromoffsets: *const c_longlong,
+        fromnulls: *const c_longlong,
+        startslength: c_longlong,
+        stream: *mut c_void,
     );
 }
 
 /// Build toindex and tooffsets for the next unique-values step.
 pub fn hip_indexed_array_unique_next_index_and_offsets(
-    toindex:      *mut i64,
-    tooffsets:    *mut i64,
-    fromoffsets:  *const i64,
-    fromnulls:    *const i64,
+    toindex: *mut i64,
+    tooffsets: *mut i64,
+    fromoffsets: *const i64,
+    fromnulls: *const i64,
     startslength: i64,
-    stream:       *mut c_void,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_indexed_array_unique_next_index_and_offsets(
-            toindex    as *mut c_longlong,
-            tooffsets  as *mut c_longlong,
+            toindex as *mut c_longlong,
+            tooffsets as *mut c_longlong,
             fromoffsets as *const c_longlong,
-            fromnulls   as *const c_longlong,
+            fromnulls as *const c_longlong,
             startslength as c_longlong,
             stream,
         );

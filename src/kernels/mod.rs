@@ -13,7 +13,7 @@
 
 pub mod cpu;
 pub mod cuda;
-#[cfg(feature = "hip")]
+#[cfg(all(feature = "hip", hip_rocm))]
 pub mod hip;
 pub mod simd;
 

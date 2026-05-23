@@ -20,27 +20,27 @@ use std::os::raw::{c_longlong, c_void};
 
 unsafe extern "C" {
     fn awkward_hip_rearrange_shifted(
-        toptr:         *mut c_longlong,
-        fromshifts:    *const c_longlong,
-        fromoffsets:   *const c_longlong,
-        fromparents:   *const c_longlong,
-        fromstarts:    *const c_longlong,
+        toptr: *mut c_longlong,
+        fromshifts: *const c_longlong,
+        fromoffsets: *const c_longlong,
+        fromparents: *const c_longlong,
+        fromstarts: *const c_longlong,
         offsetslength: c_longlong,
-        length:        c_longlong,
-        stream:        *mut c_void,
+        length: c_longlong,
+        stream: *mut c_void,
     );
 }
 
 /// Apply the two-pass rearrange-shifted transformation to `toptr`.
 pub fn hip_rearrange_shifted(
-    toptr:         *mut i64,
-    fromshifts:    *const i64,
-    fromoffsets:   *const i64,
-    fromparents:   *const i64,
-    fromstarts:    *const i64,
+    toptr: *mut i64,
+    fromshifts: *const i64,
+    fromoffsets: *const i64,
+    fromparents: *const i64,
+    fromstarts: *const i64,
     offsetslength: i64,
-    length:        i64,
-    stream:        *mut c_void,
+    length: i64,
+    stream: *mut c_void,
 ) {
     unsafe {
         awkward_hip_rearrange_shifted(

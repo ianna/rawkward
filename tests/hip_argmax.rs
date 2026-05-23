@@ -1,6 +1,8 @@
 // Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
+#![cfg(all(feature = "hip", hip_rocm))]
+
 // Link HIP runtime
 #[link(name = "amdhip64")]
 unsafe extern "C" {}
@@ -39,8 +41,8 @@ fn test_hip_segmented_argmax() {
     }
     unsafe {
         // Two segments: [0:2] and [2:4]
-        let host_data = vec![3.0f32, 7.0, 1.0, 9.0];
-        let host_offsets = vec![0i64, 2, 4];
+        let host_data = [3.0f32, 7.0, 1.0, 9.0];
+        let host_offsets = [0i64, 2, 4];
         let mut host_out = vec![-1i64; 2];
 
         let mut d_data: *mut c_void = std::ptr::null_mut();

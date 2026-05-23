@@ -19,11 +19,14 @@ fn main() {
     }
 
     // 2. HIP kernel compilation + bindings
+    // Declare hip_rocm as a known cfg name so rustc's check-cfg lint accepts it.
+    println!("cargo::rustc-check-cfg=cfg(hip_rocm)");
     if hip_feature {
         let hip_available = detect_hip();
         println!("cargo:rustc-env=RAWKWARD_HIP_AVAILABLE={}", hip_available);
         if hip_available {
             println!("cargo:warning=ROCm/HIP detected — enabling GPU kernels");
+            println!("cargo:rustc-cfg=hip_rocm");
             compile_hip_kernels();
             generate_hip_bindings();
         } else {
@@ -278,12 +281,15 @@ fn compile_awkward_bench_cxx() {
     // Fall back to the in-tree copies (src/kernels/awkward-cpp/) only when the
     // sibling directory doesn't exist (e.g. a pip include-only install).
     let ext_cpu_kernels = include_dir
-        .parent()                         // …/awkward-cpp
+        .parent() // …/awkward-cpp
         .map(|p| p.join("src/cpu-kernels"));
 
     let (src_dir, src_label): (PathBuf, &str) = match ext_cpu_kernels {
         Some(ref d) if d.is_dir() => (d.clone(), "checkout src/cpu-kernels"),
-        _ => (PathBuf::from("src/kernels/awkward-cpp"), "in-tree src/kernels/awkward-cpp"),
+        _ => (
+            PathBuf::from("src/kernels/awkward-cpp"),
+            "in-tree src/kernels/awkward-cpp",
+        ),
     };
 
     println!(
@@ -295,7 +301,7 @@ fn compile_awkward_bench_cxx() {
     let mut kernel_srcs: Vec<PathBuf> = fs::read_dir(&src_dir)
         .unwrap_or_else(|e| panic!("Cannot read kernel source dir {}: {}", src_dir.display(), e))
         .filter_map(|e| e.ok().map(|e| e.path()))
-        .filter(|p| p.extension().map_or(false, |e| e == "cpp"))
+        .filter(|p| p.extension().is_some_and(|e| e == "cpp"))
         .collect();
     kernel_srcs.sort();
 
@@ -315,7 +321,10 @@ fn compile_awkward_bench_cxx() {
 
     build.compile("awkward_bench");
 
-    println!("cargo:rustc-link-search=native={}", env::var("OUT_DIR").unwrap());
+    println!(
+        "cargo:rustc-link-search=native={}",
+        env::var("OUT_DIR").unwrap()
+    );
     println!("cargo:rustc-link-lib=static=awkward_bench");
 
     println!("cargo:rerun-if-changed=benches/awkward_bench_wrappers.cpp");

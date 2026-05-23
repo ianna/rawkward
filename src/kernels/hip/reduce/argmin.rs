@@ -16,7 +16,7 @@ pub enum HipDtype {
     I64 = 3,
 }
 
-extern "C" {
+unsafe extern "C" {
     fn awkward_hip_segmented_argmin(
         data: *const c_void,
         offsets: *const c_longlong,
@@ -47,4 +47,3 @@ pub fn hip_segmented_argmin<T>(
         );
     }
 }
-
