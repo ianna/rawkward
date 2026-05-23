@@ -4,10 +4,11 @@
 //! Backend selection and dispatch logic.
 //!
 //! Priority order:
-//!   1. CUDA (NVIDIA GPU)
-//!   2. HIP  (AMD GPU)
-//!   3. SIMD (CPU vectorization)
-//!   4. CPU  (fallback)
+//!   1. Metal (Apple Silicon GPU — macOS only)
+//!   2. CUDA  (NVIDIA GPU)
+//!   3. HIP   (AMD GPU)
+//!   4. SIMD  (CPU vectorization)
+//!   5. CPU   (scalar fallback)
 
 #![allow(dead_code)]
 
@@ -17,6 +18,8 @@ pub enum Backend {
     Simd,
     Cuda,
     Hip,
+    #[cfg(target_os = "macos")]
+    Metal,
 }
 
 impl Backend {
@@ -26,6 +29,8 @@ impl Backend {
             Backend::Simd => "simd",
             Backend::Cuda => "cuda",
             Backend::Hip => "hip",
+            #[cfg(target_os = "macos")]
+            Backend::Metal => "metal",
         }
     }
 }

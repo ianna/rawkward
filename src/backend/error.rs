@@ -5,6 +5,8 @@
 pub enum GpuError {
     HipError(String),
     CudaError(String),
+    MetalError(String),
     KernelNotFound(String),
     InvalidArgument,
+    InitializationFailed,
 }
