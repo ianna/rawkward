@@ -3,89 +3,75 @@
 
 #include <hip/hip_runtime.h>
 
-#define HIP_CHECK(err) \
-    if (err != hipSuccess) { \
-        printf("HIP error: %s (%d) at %s:%d\n", hipGetErrorString(err), err, __FILE__, __LINE__); \
-        return; \
-    }
+// ── Segmented reduce-sum kernels ─────────────────────────────────────────────
+//
+// One thread per segment.  `blockIdx.x * blockDim.x + threadIdx.x` is the
+// segment index; the thread sums data[offsets[seg]..offsets[seg+1]] into
+// out[seg].  Out-of-range threads return immediately.
+//
+// Launched via the GpuBackend abstraction (hipModuleLaunchKernel) with
+// blocks = ceil(n_segments / 256), threads = 256.
+//
+// Named with `extern "C"` to suppress C++ name mangling; kernel names are
+// looked up at runtime via `hipModuleGetFunction`.
+//
+// Note: double (f64) IS supported on AMD GCN and RDNA compute shaders,
+// unlike Metal which forbids double entirely.
 
 template <typename T>
-__global__ void segmented_sum_kernel(
-    const T* __restrict__ data,
-    const long long* __restrict__ offsets,
-    T* __restrict__ out,
-    long long n_segments
+__device__ inline void segmented_sum_body(
+    const T*          data,
+    const long long*  offsets,
+    T*                out,
+    long long         n_segments,
+    long long         seg
 ) {
-    long long seg = blockIdx.x * blockDim.x + threadIdx.x;
     if (seg >= n_segments) return;
-
     long long start = offsets[seg];
     long long end   = offsets[seg + 1];
-
-    if (end <= start) {
-        out[seg] = T(0);
-        return;
-    }
-
     T acc = T(0);
-    for (long long i = start; i < end; i++) {
+    for (long long i = start; i < end; ++i) {
         acc += data[i];
     }
-
     out[seg] = acc;
 }
 
-template <typename T>
-void launch_segmented_sum(
-    const T* data,
+extern "C" __global__ void segmented_sum_f32(
+    const float*     data,
     const long long* offsets,
-    T* out,
-    long long n_segments,
-    hipStream_t stream
+    float*           out,
+    long long        n_segments
 ) {
-    int threads = 256;
-    int blocks = (n_segments + threads - 1) / threads;
-
-    hipLaunchKernelGGL(
-        segmented_sum_kernel<T>,
-        dim3(blocks), dim3(threads), 0, stream,
-        data, offsets, out, n_segments
-    );
-
-    HIP_CHECK(hipGetLastError());
+    long long seg = (long long)blockIdx.x * blockDim.x + threadIdx.x;
+    segmented_sum_body(data, offsets, out, n_segments, seg);
 }
 
-extern "C" void awkward_hip_segmented_sum(
-    const void* data,
+extern "C" __global__ void segmented_sum_f64(
+    const double*    data,
     const long long* offsets,
-    void* out,
-    long long n_segments,
-    int dtype_code,
-    hipStream_t stream
+    double*          out,
+    long long        n_segments
 ) {
-    switch (dtype_code) {
-        case 0: launch_segmented_sum<float>(
-                    static_cast<const float*>(data),
-                    offsets,
-                    static_cast<float*>(out),
-                    n_segments, stream); break;
-        case 1: launch_segmented_sum<double>(
-                    static_cast<const double*>(data),
-                    offsets,
-                    static_cast<double*>(out),
-                    n_segments, stream); break;
-        case 2: launch_segmented_sum<int>(
-                    static_cast<const int*>(data),
-                    offsets,
-                    static_cast<int*>(out),
-                    n_segments, stream); break;
-        case 3: launch_segmented_sum<long long>(
-                    static_cast<const long long*>(data),
-                    offsets,
-                    static_cast<long long*>(out),
-                    n_segments, stream); break;
-        default:
-            printf("Unsupported dtype_code %d\n", dtype_code);
-    }
+    long long seg = (long long)blockIdx.x * blockDim.x + threadIdx.x;
+    segmented_sum_body(data, offsets, out, n_segments, seg);
 }
 
+extern "C" __global__ void segmented_sum_i32(
+    const int*       data,
+    const long long* offsets,
+    int*             out,
+    long long        n_segments
+) {
+    long long seg = (long long)blockIdx.x * blockDim.x + threadIdx.x;
+    segmented_sum_body(data, offsets, out, n_segments, seg);
+}
+
+extern "C" __global__ void segmented_sum_i64(
+    const long long* data,
+    const long long* offsets,
+    long long*       out,
+    long long        n_segments
+) {
+    long long seg = (long long)blockIdx.x * blockDim.x + threadIdx.x;
+    segmented_sum_body(data, offsets, out, n_segments, seg);
+}

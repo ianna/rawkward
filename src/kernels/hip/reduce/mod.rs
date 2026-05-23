@@ -1,10 +1,6 @@
 // Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
-// Re-export HipDtype from sum so the other modules can import it with
-// `use crate::kernels::hip::reduce::HipDtype;`
-pub use sum::HipDtype;
-
 // Scalar reducers — output has one element per segment
 pub mod argmax;
 pub mod argmin;
