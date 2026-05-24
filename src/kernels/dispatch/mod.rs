@@ -7,7 +7,9 @@ pub mod backend;
 pub mod device_query;
 
 use backend::Backend;
-use device_query::{cuda_available, hip_available, metal_available, simd_available};
+use device_query::{cuda_available, hip_available, simd_available};
+#[cfg(target_os = "macos")]
+use device_query::metal_available;
 
 /// Select the best backend available on this machine.
 ///
