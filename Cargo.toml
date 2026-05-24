@@ -98,3 +98,12 @@ required-features = ["hip"]
 # Run on della-milan: cargo bench --features hip --bench reduce_sum_hip
 # Sizes and LCG seed match reduce_sum_metal.rs for direct cross-machine comparison.
 
+[[bench]]
+name = "reduce_hip"
+harness = false
+required-features = ["hip"]
+# Criterion bench for all 8 HIP reduce kernels (argmax, argmin, count,
+# countnonzero, max, min, prod, sum) with cpu and hip sub-groups.
+# Run on della-milan: cargo bench --features hip --bench reduce_hip
+# Reports: target/criterion/<group>/report/index.html
+
