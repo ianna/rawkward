@@ -14,8 +14,8 @@ use crate::backend::{DevSlice, GpuBackend, GpuStream};
 use hip_bindings::{
     hipError_t_hipSuccess, hipFree, hipFunction_t, hipMalloc, hipMemcpy,
     hipMemcpyKind_hipMemcpyDeviceToHost, hipMemcpyKind_hipMemcpyHostToDevice, hipModule_t,
-    hipModuleGetFunction, hipModuleLaunchKernel, hipModuleLoad, hipModuleLoadData, hipModuleUnload,
-    hipStream_t, hipStreamCreate, hipStreamDestroy,
+    hipModuleGetFunction, hipModuleLaunchKernel, hipModuleLoadData, hipModuleUnload, hipStream_t,
+    hipStreamCreate, hipStreamDestroy,
 };
 
 fn hip_free(ptr: *mut c_void) {
