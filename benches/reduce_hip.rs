@@ -28,17 +28,12 @@
 //!   large   1 M elems, 16 K segments  (avg 64 elems/seg)
 //! ```
 
-#![allow(clippy::too_many_arguments)]
-
 use criterion::{
     BatchSize, BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main,
 };
 
 #[cfg(all(feature = "hip", hip_rocm))]
 use rawkward::backend::{GpuBackend, hip::HipBackend};
-
-#[cfg(all(feature = "hip", hip_rocm))]
-use rawkward::kernels::hip::reduce::HipDtype;
 
 // ── Input sizes ───────────────────────────────────────────────────────────────
 
@@ -82,7 +77,7 @@ fn bench_reduce_argmax(c: &mut Criterion) {
     use rawkward::kernels::cpu::reduce::argmax::reduce_argmax;
 
     #[cfg(all(feature = "hip", hip_rocm))]
-    use rawkward::kernels::hip::reduce::argmax::hip_segmented_argmax;
+    use rawkward::kernels::hip::reduce::argmax::segmented_argmax_i64;
 
     #[cfg(all(feature = "hip", hip_rocm))]
     let backend = HipBackend::new();
@@ -119,22 +114,18 @@ fn bench_reduce_argmax(c: &mut Criterion) {
             let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
             let mut out_host = vec![0i64; k];
 
-            let d_ptr = dev_data.ptr as *const i64;
-            let o_ptr = dev_offsets.ptr as *const i64;
-            let out_ptr = dev_out.ptr as *mut i64;
-
             group.bench_with_input(BenchmarkId::new("hip", &label), &(), |b, _| {
                 b.iter_batched_ref(
                     || (),
                     |_| {
-                        hip_segmented_argmax(
-                            black_box(d_ptr),
-                            black_box(o_ptr),
-                            black_box(out_ptr),
+                        segmented_argmax_i64(
+                            black_box(&backend),
+                            black_box(&dev_data),
+                            black_box(&dev_offsets),
+                            black_box(&mut dev_out),
                             k as i64,
-                            HipDtype::I64,
-                            std::ptr::null_mut(),
-                        );
+                        )
+                        .expect("HIP reduce_argmax_i64 failed");
                         backend.download_slice(&dev_out, black_box(&mut out_host));
                     },
                     BatchSize::SmallInput,
@@ -151,7 +142,7 @@ fn bench_reduce_argmin(c: &mut Criterion) {
     use rawkward::kernels::cpu::reduce::argmin::reduce_argmin;
 
     #[cfg(all(feature = "hip", hip_rocm))]
-    use rawkward::kernels::hip::reduce::argmin::hip_segmented_argmin;
+    use rawkward::kernels::hip::reduce::argmin::segmented_argmin_i64;
 
     #[cfg(all(feature = "hip", hip_rocm))]
     let backend = HipBackend::new();
@@ -186,22 +177,18 @@ fn bench_reduce_argmin(c: &mut Criterion) {
             let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
             let mut out_host = vec![0i64; k];
 
-            let d_ptr = dev_data.ptr as *const i64;
-            let o_ptr = dev_offsets.ptr as *const i64;
-            let out_ptr = dev_out.ptr as *mut i64;
-
             group.bench_with_input(BenchmarkId::new("hip", &label), &(), |b, _| {
                 b.iter_batched_ref(
                     || (),
                     |_| {
-                        hip_segmented_argmin(
-                            black_box(d_ptr),
-                            black_box(o_ptr),
-                            black_box(out_ptr),
+                        segmented_argmin_i64(
+                            black_box(&backend),
+                            black_box(&dev_data),
+                            black_box(&dev_offsets),
+                            black_box(&mut dev_out),
                             k as i64,
-                            HipDtype::I64,
-                            std::ptr::null_mut(),
-                        );
+                        )
+                        .expect("HIP reduce_argmin_i64 failed");
                         backend.download_slice(&dev_out, black_box(&mut out_host));
                     },
                     BatchSize::SmallInput,
@@ -215,14 +202,13 @@ fn bench_reduce_argmin(c: &mut Criterion) {
 // ── reduce_count ──────────────────────────────────────────────────────────────
 //
 // CPU uses `reduce_count_64(toptr, parents)` — parents, not offsets.
-// HIP uses `hip_segmented_count(data, offsets, out, …)` — offsets.
-// Both compute `out[seg] = offsets[seg+1] - offsets[seg]`.
+// HIP uses `segmented_count(offsets, out, n_segments)` — offsets only, no data.
 
 fn bench_reduce_count(c: &mut Criterion) {
     use rawkward::kernels::cpu::reduce::count::reduce_count_64;
 
     #[cfg(all(feature = "hip", hip_rocm))]
-    use rawkward::kernels::hip::reduce::count::hip_segmented_count;
+    use rawkward::kernels::hip::reduce::count::segmented_count;
 
     #[cfg(all(feature = "hip", hip_rocm))]
     let backend = HipBackend::new();
@@ -230,7 +216,6 @@ fn bench_reduce_count(c: &mut Criterion) {
     let mut group = c.benchmark_group("reduce_count_hip");
 
     for &(n, k) in SIZES {
-        let data = make_data_i64(n); // HIP count still requires a data ptr for API uniformity
         let parents = make_parents_contig(n, k);
         let offsets = make_offsets_contig(n, k);
         let label = format!("{n}/{k}");
@@ -247,27 +232,21 @@ fn bench_reduce_count(c: &mut Criterion) {
 
         #[cfg(all(feature = "hip", hip_rocm))]
         {
-            let dev_data = backend.upload_slice::<i64>(&data);
             let dev_offsets = backend.upload_slice::<i64>(&offsets);
             let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
             let mut out_host = vec![0i64; k];
-
-            let d_ptr = dev_data.ptr as *const i64;
-            let o_ptr = dev_offsets.ptr as *const i64;
-            let out_ptr = dev_out.ptr as *mut i64;
 
             group.bench_with_input(BenchmarkId::new("hip", &label), &(), |b, _| {
                 b.iter_batched_ref(
                     || (),
                     |_| {
-                        hip_segmented_count(
-                            black_box(d_ptr),
-                            black_box(o_ptr),
-                            black_box(out_ptr),
+                        segmented_count(
+                            black_box(&backend),
+                            black_box(&dev_offsets),
+                            black_box(&mut dev_out),
                             k as i64,
-                            HipDtype::I64,
-                            std::ptr::null_mut(),
-                        );
+                        )
+                        .expect("HIP reduce_count failed");
                         backend.download_slice(&dev_out, black_box(&mut out_host));
                     },
                     BatchSize::SmallInput,
@@ -281,13 +260,13 @@ fn bench_reduce_count(c: &mut Criterion) {
 // ── reduce_countnonzero ───────────────────────────────────────────────────────
 //
 // CPU uses `reduce_countnonzero(toptr, fromptr, parents)` — parents.
-// HIP uses `hip_segmented_countnonzero(data, offsets, out, …)` — offsets.
+// HIP uses `segmented_countnonzero_i64(data, offsets, out, n)` — offsets.
 
 fn bench_reduce_countnonzero(c: &mut Criterion) {
     use rawkward::kernels::cpu::reduce::countnonzero::reduce_countnonzero;
 
     #[cfg(all(feature = "hip", hip_rocm))]
-    use rawkward::kernels::hip::reduce::countnonzero::hip_segmented_countnonzero;
+    use rawkward::kernels::hip::reduce::countnonzero::segmented_countnonzero_i64;
 
     #[cfg(all(feature = "hip", hip_rocm))]
     let backend = HipBackend::new();
@@ -323,22 +302,18 @@ fn bench_reduce_countnonzero(c: &mut Criterion) {
             let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
             let mut out_host = vec![0i64; k];
 
-            let d_ptr = dev_data.ptr as *const i64;
-            let o_ptr = dev_offsets.ptr as *const i64;
-            let out_ptr = dev_out.ptr as *mut i64;
-
             group.bench_with_input(BenchmarkId::new("hip", &label), &(), |b, _| {
                 b.iter_batched_ref(
                     || (),
                     |_| {
-                        hip_segmented_countnonzero(
-                            black_box(d_ptr),
-                            black_box(o_ptr),
-                            black_box(out_ptr),
+                        segmented_countnonzero_i64(
+                            black_box(&backend),
+                            black_box(&dev_data),
+                            black_box(&dev_offsets),
+                            black_box(&mut dev_out),
                             k as i64,
-                            HipDtype::I64,
-                            std::ptr::null_mut(),
-                        );
+                        )
+                        .expect("HIP reduce_countnonzero_i64 failed");
                         backend.download_slice(&dev_out, black_box(&mut out_host));
                     },
                     BatchSize::SmallInput,
@@ -355,7 +330,7 @@ fn bench_reduce_max(c: &mut Criterion) {
     use rawkward::kernels::cpu::reduce::max::reduce_max;
 
     #[cfg(all(feature = "hip", hip_rocm))]
-    use rawkward::kernels::hip::reduce::max::hip_segmented_max;
+    use rawkward::kernels::hip::reduce::max::segmented_max_i64;
 
     #[cfg(all(feature = "hip", hip_rocm))]
     let backend = HipBackend::new();
@@ -391,22 +366,18 @@ fn bench_reduce_max(c: &mut Criterion) {
             let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
             let mut out_host = vec![0i64; k];
 
-            let d_ptr = dev_data.ptr as *const i64;
-            let o_ptr = dev_offsets.ptr as *const i64;
-            let out_ptr = dev_out.ptr as *mut i64;
-
             group.bench_with_input(BenchmarkId::new("hip", &label), &(), |b, _| {
                 b.iter_batched_ref(
                     || (),
                     |_| {
-                        hip_segmented_max(
-                            black_box(d_ptr),
-                            black_box(o_ptr),
-                            black_box(out_ptr),
+                        segmented_max_i64(
+                            black_box(&backend),
+                            black_box(&dev_data),
+                            black_box(&dev_offsets),
+                            black_box(&mut dev_out),
                             k as i64,
-                            HipDtype::I64,
-                            std::ptr::null_mut(),
-                        );
+                        )
+                        .expect("HIP reduce_max_i64 failed");
                         backend.download_slice(&dev_out, black_box(&mut out_host));
                     },
                     BatchSize::SmallInput,
@@ -423,7 +394,7 @@ fn bench_reduce_min(c: &mut Criterion) {
     use rawkward::kernels::cpu::reduce::min::reduce_min;
 
     #[cfg(all(feature = "hip", hip_rocm))]
-    use rawkward::kernels::hip::reduce::min::hip_segmented_min;
+    use rawkward::kernels::hip::reduce::min::segmented_min_i64;
 
     #[cfg(all(feature = "hip", hip_rocm))]
     let backend = HipBackend::new();
@@ -459,22 +430,18 @@ fn bench_reduce_min(c: &mut Criterion) {
             let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
             let mut out_host = vec![0i64; k];
 
-            let d_ptr = dev_data.ptr as *const i64;
-            let o_ptr = dev_offsets.ptr as *const i64;
-            let out_ptr = dev_out.ptr as *mut i64;
-
             group.bench_with_input(BenchmarkId::new("hip", &label), &(), |b, _| {
                 b.iter_batched_ref(
                     || (),
                     |_| {
-                        hip_segmented_min(
-                            black_box(d_ptr),
-                            black_box(o_ptr),
-                            black_box(out_ptr),
+                        segmented_min_i64(
+                            black_box(&backend),
+                            black_box(&dev_data),
+                            black_box(&dev_offsets),
+                            black_box(&mut dev_out),
                             k as i64,
-                            HipDtype::I64,
-                            std::ptr::null_mut(),
-                        );
+                        )
+                        .expect("HIP reduce_min_i64 failed");
                         backend.download_slice(&dev_out, black_box(&mut out_host));
                     },
                     BatchSize::SmallInput,
@@ -491,7 +458,7 @@ fn bench_reduce_prod(c: &mut Criterion) {
     use rawkward::kernels::cpu::reduce::prod::reduce_prod;
 
     #[cfg(all(feature = "hip", hip_rocm))]
-    use rawkward::kernels::hip::reduce::prod::hip_segmented_prod;
+    use rawkward::kernels::hip::reduce::prod::segmented_prod_i64;
 
     #[cfg(all(feature = "hip", hip_rocm))]
     let backend = HipBackend::new();
@@ -526,22 +493,18 @@ fn bench_reduce_prod(c: &mut Criterion) {
             let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
             let mut out_host = vec![0i64; k];
 
-            let d_ptr = dev_data.ptr as *const i64;
-            let o_ptr = dev_offsets.ptr as *const i64;
-            let out_ptr = dev_out.ptr as *mut i64;
-
             group.bench_with_input(BenchmarkId::new("hip", &label), &(), |b, _| {
                 b.iter_batched_ref(
                     || (),
                     |_| {
-                        hip_segmented_prod(
-                            black_box(d_ptr),
-                            black_box(o_ptr),
-                            black_box(out_ptr),
+                        segmented_prod_i64(
+                            black_box(&backend),
+                            black_box(&dev_data),
+                            black_box(&dev_offsets),
+                            black_box(&mut dev_out),
                             k as i64,
-                            HipDtype::I64,
-                            std::ptr::null_mut(),
-                        );
+                        )
+                        .expect("HIP reduce_prod_i64 failed");
                         backend.download_slice(&dev_out, black_box(&mut out_host));
                     },
                     BatchSize::SmallInput,
@@ -553,8 +516,6 @@ fn bench_reduce_prod(c: &mut Criterion) {
 }
 
 // ── reduce_sum ────────────────────────────────────────────────────────────────
-//
-// Uses the GpuBackend API (sum.rs was rewritten in the Metal review session).
 
 fn bench_reduce_sum(c: &mut Criterion) {
     use rawkward::kernels::cpu::reduce::sum::reduce_sum;
