@@ -1,47 +1,40 @@
 // Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
-//! HIP segmented count FFI wrapper.
-//! Calls: awkward_hip_segmented_count(data, offsets, out, n_segments, dtype_code, stream)
+//! HIP segmented count dispatch.
 //!
-//! `out[seg]` = number of elements in segment `seg`.
-//! The `dtype` parameter is accepted for API uniformity but is not used — the
-//! count is always written as `i64` regardless of input element type.
+//! out[seg] = offsets[seg+1] - offsets[seg].
+//! Single kernel (output always i64 regardless of data type; no data pointer needed).
 
-use crate::kernels::hip::reduce::HipDtype;
-use std::os::raw::{c_int, c_longlong, c_void};
+use crate::backend::GpuBackend;
+use crate::backend::device_slice::DevicePtr;
+use crate::backend::error::GpuError;
+use crate::hip_args;
 
-unsafe extern "C" {
-    fn awkward_hip_segmented_count(
-        data: *const c_void,
-        offsets: *const c_longlong,
-        out: *mut c_longlong,
-        n_segments: c_longlong,
-        dtype_code: c_int,
-        stream: *mut c_void,
-    );
+const BLOCK: u32 = 256;
+
+#[inline]
+fn blocks(n_segments: i64) -> u32 {
+    ((n_segments as u64 + BLOCK as u64 - 1) / BLOCK as u64).max(1) as u32
 }
 
-/// Count the number of elements in each segment.
+/// Count elements per segment.
 ///
-/// `out[seg]` = `offsets[seg+1] - offsets[seg]`.
-/// `out` must have at least `n_segments` elements.
-pub fn hip_segmented_count<T>(
-    data: *const T,
-    offsets: *const i64,
-    out: *mut i64,
+/// Takes only `offsets` and `out` — no data pointer, since the result is
+/// purely a function of the segment boundaries.
+pub fn segmented_count<B: GpuBackend>(
+    backend: &B,
+    offsets: &B::DevSlice<i64>,
+    out: &mut B::DevSlice<i64>,
     n_segments: i64,
-    dtype: HipDtype,
-    stream: *mut c_void,
-) {
-    unsafe {
-        awkward_hip_segmented_count(
-            data as *const c_void,
-            offsets as *const c_longlong,
-            out as *mut c_longlong,
-            n_segments as c_longlong,
-            dtype as c_int,
-            stream,
-        );
+) -> Result<(), GpuError> {
+    if n_segments == 0 {
+        return Ok(());
     }
+    let kernel = backend
+        .get_kernel("segmented_count")
+        .map_err(GpuError::HipError)?;
+    hip_args!(args; offsets.as_device_ptr(), out.as_device_ptr(), n_segments);
+    unsafe { backend.launch(&kernel, (blocks(n_segments), 1, 1), (BLOCK, 1, 1), &args) }
+    Ok(())
 }

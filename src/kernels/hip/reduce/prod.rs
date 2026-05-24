@@ -1,43 +1,90 @@
 // Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
-//! HIP segmented product FFI wrapper.
-//! Calls: awkward_hip_segmented_prod(data, offsets, out, n_segments, dtype_code, stream)
+//! HIP segmented product dispatch.
+//!
+//! out[seg] = product of all elements in segment.  Empty segments write T(1).
 
-use crate::kernels::hip::reduce::HipDtype;
-use std::os::raw::{c_int, c_longlong, c_void};
+use crate::backend::GpuBackend;
+use crate::backend::device_slice::DevicePtr;
+use crate::backend::error::GpuError;
+use crate::hip_args;
 
-unsafe extern "C" {
-    fn awkward_hip_segmented_prod(
-        data: *const c_void,
-        offsets: *const c_longlong,
-        out: *mut c_void,
-        n_segments: c_longlong,
-        dtype_code: c_int,
-        stream: *mut c_void,
-    );
+const BLOCK: u32 = 256;
+
+#[inline]
+fn blocks(n_segments: i64) -> u32 {
+    ((n_segments as u64 + BLOCK as u64 - 1) / BLOCK as u64).max(1) as u32
 }
 
-/// Multiply all elements in each segment.
-///
-/// `out[seg]` = product of `data[offsets[seg] .. offsets[seg+1]]`.
-/// Empty segments yield `1` (the multiplicative identity).
-pub fn hip_segmented_prod<T>(
-    data: *const T,
-    offsets: *const i64,
-    out: *mut T,
+pub fn segmented_prod_f32<B: GpuBackend>(
+    backend: &B,
+    data: &B::DevSlice<f32>,
+    offsets: &B::DevSlice<i64>,
+    out: &mut B::DevSlice<f32>,
     n_segments: i64,
-    dtype: HipDtype,
-    stream: *mut c_void,
-) {
-    unsafe {
-        awkward_hip_segmented_prod(
-            data as *const c_void,
-            offsets as *const c_longlong,
-            out as *mut c_void,
-            n_segments as c_longlong,
-            dtype as c_int,
-            stream,
-        );
+) -> Result<(), GpuError> {
+    if n_segments == 0 {
+        return Ok(());
     }
+    let kernel = backend
+        .get_kernel("segmented_prod_f32")
+        .map_err(GpuError::HipError)?;
+    hip_args!(args; data.as_device_ptr(), offsets.as_device_ptr(), out.as_device_ptr(), n_segments);
+    unsafe { backend.launch(&kernel, (blocks(n_segments), 1, 1), (BLOCK, 1, 1), &args) }
+    Ok(())
+}
+
+pub fn segmented_prod_f64<B: GpuBackend>(
+    backend: &B,
+    data: &B::DevSlice<f64>,
+    offsets: &B::DevSlice<i64>,
+    out: &mut B::DevSlice<f64>,
+    n_segments: i64,
+) -> Result<(), GpuError> {
+    if n_segments == 0 {
+        return Ok(());
+    }
+    let kernel = backend
+        .get_kernel("segmented_prod_f64")
+        .map_err(GpuError::HipError)?;
+    hip_args!(args; data.as_device_ptr(), offsets.as_device_ptr(), out.as_device_ptr(), n_segments);
+    unsafe { backend.launch(&kernel, (blocks(n_segments), 1, 1), (BLOCK, 1, 1), &args) }
+    Ok(())
+}
+
+pub fn segmented_prod_i32<B: GpuBackend>(
+    backend: &B,
+    data: &B::DevSlice<i32>,
+    offsets: &B::DevSlice<i64>,
+    out: &mut B::DevSlice<i32>,
+    n_segments: i64,
+) -> Result<(), GpuError> {
+    if n_segments == 0 {
+        return Ok(());
+    }
+    let kernel = backend
+        .get_kernel("segmented_prod_i32")
+        .map_err(GpuError::HipError)?;
+    hip_args!(args; data.as_device_ptr(), offsets.as_device_ptr(), out.as_device_ptr(), n_segments);
+    unsafe { backend.launch(&kernel, (blocks(n_segments), 1, 1), (BLOCK, 1, 1), &args) }
+    Ok(())
+}
+
+pub fn segmented_prod_i64<B: GpuBackend>(
+    backend: &B,
+    data: &B::DevSlice<i64>,
+    offsets: &B::DevSlice<i64>,
+    out: &mut B::DevSlice<i64>,
+    n_segments: i64,
+) -> Result<(), GpuError> {
+    if n_segments == 0 {
+        return Ok(());
+    }
+    let kernel = backend
+        .get_kernel("segmented_prod_i64")
+        .map_err(GpuError::HipError)?;
+    hip_args!(args; data.as_device_ptr(), offsets.as_device_ptr(), out.as_device_ptr(), n_segments);
+    unsafe { backend.launch(&kernel, (blocks(n_segments), 1, 1), (BLOCK, 1, 1), &args) }
+    Ok(())
 }
