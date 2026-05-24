@@ -48,6 +48,7 @@ impl<T> DevSlice<T> {
     /// `Box<MetalAllocation>` raw pointer that keeps the `Buffer` alive.
     /// Only meaningful to the backend that created the slice; do not use
     /// outside `crate::backend`.
+    #[cfg(target_os = "macos")]
     #[inline]
     pub(crate) fn free_data(&self) -> *mut c_void {
         self.free_data
