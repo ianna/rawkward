@@ -1,6 +1,11 @@
 // Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
+// `HipDtype` is the shared dtype tag used by all reduce modules.  It lives in
+// `argmin` (its first consumer) and is re-exported here so every sibling can
+// import it as `crate::kernels::hip::reduce::HipDtype`.
+pub use argmin::HipDtype;
+
 // Scalar reducers — output has one element per segment
 pub mod argmax;
 pub mod argmin;
