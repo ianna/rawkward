@@ -4,14 +4,14 @@
 #[macro_export]
 macro_rules! hip_args {
     ($name:ident; $a0:expr, $a1:expr, $a2:expr $(,)?) => {
-       let __h0 = $a0;
-       let __h1 = $a1;
-       let __h2 = $a2;
-       let $name: [*mut ::std::ffi::c_void; 3] = [
-           &__h0 as *const _ as *mut _,
-           &__h1 as *const _ as *mut _,
-           &__h2 as *const _ as *mut _,
-       ];
+        let __h0 = $a0;
+        let __h1 = $a1;
+        let __h2 = $a2;
+        let $name: [*mut ::std::ffi::c_void; 3] = [
+            &__h0 as *const _ as *mut _,
+            &__h1 as *const _ as *mut _,
+            &__h2 as *const _ as *mut _,
+        ];
     };
     ($name:ident; $a0:expr, $a1:expr, $a2:expr, $a3:expr $(,)?) => {
         let __h0 = $a0;
