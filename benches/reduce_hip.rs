@@ -217,7 +217,7 @@ fn bench_reduce_count(c: &mut Criterion) {
 
     for &(n, k) in SIZES {
         let parents = make_parents_contig(n, k);
-        let offsets = make_offsets_contig(n, k);
+        let _offsets = make_offsets_contig(n, k);
         let label = format!("{n}/{k}");
         group.throughput(Throughput::Elements(n as u64));
 
@@ -276,7 +276,7 @@ fn bench_reduce_countnonzero(c: &mut Criterion) {
     for &(n, k) in SIZES {
         let data = make_data_i64(n);
         let parents = make_parents_contig(n, k);
-        let offsets = make_offsets_contig(n, k);
+        let _offsets = make_offsets_contig(n, k);
         let label = format!("{n}/{k}");
         group.throughput(Throughput::Elements(n as u64));
 

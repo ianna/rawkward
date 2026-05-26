@@ -117,7 +117,7 @@ impl GpuBackend for MetalBackend {
             .new_buffer(bytes as u64, MTLResourceOptions::StorageModeShared);
 
         // `buffer.contents()` is the CPU-visible pointer into unified memory.
-        let payload_ptr = buffer.contents() as *mut c_void;
+        let payload_ptr = buffer.contents();
 
         // Box the allocation tracker so the Metal buffer stays alive until the
         // DevSlice is dropped, at which point `metal_free` runs.
@@ -127,7 +127,7 @@ impl GpuBackend for MetalBackend {
     }
 
     fn upload_slice<T: Copy + Send + Sync>(&self, host: &[T]) -> Self::DevSlice<T> {
-        let bytes = host.len() * std::mem::size_of::<T>();
+        let bytes = std::mem::size_of_val(host);
 
         // Same zero-length guard as alloc_slice: Metal returns a null-backed
         // Buffer for a 0-byte request, which panics on drop in metal-0.29.
@@ -146,7 +146,7 @@ impl GpuBackend for MetalBackend {
         let buffer = self
             .device
             .new_buffer(bytes as u64, MTLResourceOptions::StorageModeShared);
-        let payload_ptr = buffer.contents() as *mut c_void;
+        let payload_ptr = buffer.contents();
         unsafe {
             std::ptr::copy_nonoverlapping(
                 host.as_ptr() as *const u8,

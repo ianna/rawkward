@@ -37,12 +37,11 @@
 //! is derived from the pipeline's `max_total_threads_per_threadgroup`, capped
 //! at 256 to leave headroom for future kernels that do use shared memory.
 
-use metal::{Buffer, CommandQueue, Device, MTLSize};
+use metal::{Buffer, MTLSize};
 
 use crate::backend::DevSlice;
 use crate::backend::metal::MetalBackend;
 use crate::backend::metal::buffer_of;
-use crate::kernels::metal::MetalKernelRegistry;
 
 // ---------------------------------------------------------------------------
 // Dtype tag
@@ -81,9 +80,7 @@ impl MetalDtype {
 ///
 /// Blocks the calling thread until the GPU completes (`wait_until_completed`).
 fn dispatch_segmented_sum(
-    device: &Device,
-    queue: &CommandQueue,
-    registry: &MetalKernelRegistry,
+    backend: &MetalBackend,
     data: &Buffer,
     offsets: &Buffer,
     out: &Buffer,
@@ -94,6 +91,12 @@ fn dispatch_segmented_sum(
         return Ok(());
     }
 
+    let MetalBackend {
+        device,
+        queue,
+        registry,
+        ..
+    } = backend;
     let pipeline = registry.get_pipeline(device, dtype.kernel_name())?;
 
     // Optimal threadgroup width: the pipeline's hardware maximum, capped so
@@ -157,9 +160,7 @@ pub unsafe fn segmented_sum_f32(
     }
     unsafe {
         dispatch_segmented_sum(
-            &backend.device,
-            &backend.queue,
-            &backend.registry,
+            backend,
             buffer_of(data),
             buffer_of(offsets),
             buffer_of(&*out),
@@ -178,8 +179,9 @@ pub unsafe fn segmented_sum_f32(
 ///
 /// To accumulate in higher precision on Metal, consider summing in `f32`
 /// with Kahan compensation, or falling back to the CPU kernel.
+#[allow(clippy::too_many_arguments)]
 #[allow(unused_variables)]
-pub unsafe fn segmented_sum_f64(
+pub fn segmented_sum_f64(
     backend: &MetalBackend,
     data: &DevSlice<f64>,
     offsets: &DevSlice<i64>,
@@ -198,7 +200,7 @@ pub unsafe fn segmented_sum_f64(
 /// # Safety
 ///
 /// Same contract as [`segmented_sum_f32`].
-pub unsafe fn segmented_sum_i32(
+pub fn segmented_sum_i32(
     backend: &MetalBackend,
     data: &DevSlice<i32>,
     offsets: &DevSlice<i64>,
@@ -210,9 +212,7 @@ pub unsafe fn segmented_sum_i32(
     }
     unsafe {
         dispatch_segmented_sum(
-            &backend.device,
-            &backend.queue,
-            &backend.registry,
+            backend,
             buffer_of(data),
             buffer_of(offsets),
             buffer_of(&*out),
@@ -239,9 +239,7 @@ pub unsafe fn segmented_sum_i64(
     }
     unsafe {
         dispatch_segmented_sum(
-            &backend.device,
-            &backend.queue,
-            &backend.registry,
+            backend,
             buffer_of(data),
             buffer_of(offsets),
             buffer_of(&*out),
@@ -271,7 +269,11 @@ mod tests {
             let data_dev = b.upload_slice::<$T>($data);
             let offsets_dev = b.upload_slice::<i64>($offsets);
             let mut out_dev = unsafe { b.alloc_slice::<$T>($n as usize) };
-            unsafe { $fn(b, &data_dev, &offsets_dev, &mut out_dev, $n).unwrap() };
+            unsafe {
+                {
+                    $fn(b, &data_dev, &offsets_dev, &mut out_dev, $n).unwrap()
+                };
+            }
             let mut out = vec![<$T>::default(); $n as usize];
             b.download_slice(&out_dev, &mut out);
             out
@@ -299,8 +301,7 @@ mod tests {
         let data_dev = backend.upload_slice::<f64>(&data);
         let offsets_dev = backend.upload_slice::<i64>(&offsets);
         let mut out_dev = unsafe { backend.alloc_slice::<f64>(1) };
-        let result =
-            unsafe { segmented_sum_f64(&backend, &data_dev, &offsets_dev, &mut out_dev, 1) };
+        let result = { segmented_sum_f64(&backend, &data_dev, &offsets_dev, &mut out_dev, 1) };
         assert!(result.is_err(), "expected Err for unsupported f64, got Ok");
         let msg = result.unwrap_err();
         assert!(
@@ -310,6 +311,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(unused_unsafe)]
     fn i32_empty_segment() {
         let backend = make_backend();
         let data = [10i32, 20];
