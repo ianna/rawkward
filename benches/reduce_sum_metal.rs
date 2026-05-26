@@ -168,7 +168,7 @@ fn bench_reduce_sum_f32(c: &mut Criterion) {
             // Data is already in a StorageModeShared buffer — no transfer cost.
             {
                 #[cfg(target_os = "macos")]
-                if let (Some(ref b), Some(ref d), Some(ref o), Some(ref mut out)) = (
+                if let (Some(b), Some(d), Some(o), Some(ref mut out)) = (
                     backend.as_ref(),
                     data_dev.as_ref(),
                     offsets_dev.as_ref(),
@@ -244,7 +244,7 @@ fn bench_reduce_sum_i64(c: &mut Criterion) {
             // ── Metal ────────────────────────────────────────────────────────
             {
                 #[cfg(target_os = "macos")]
-                if let (Some(ref b), Some(ref d), Some(ref o), Some(ref mut out)) = (
+                if let (Some(b), Some(d), Some(o), Some(ref mut out)) = (
                     backend.as_ref(),
                     data_dev.as_ref(),
                     offsets_dev.as_ref(),
