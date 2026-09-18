@@ -113,6 +113,12 @@ impl GpuBackend for HipBackend {
     }
 
     fn download_slice<T: Copy + Send + Sync>(&self, dev: &Self::DevSlice<T>, host: &mut [T]) {
+        assert!(
+            host.len() <= dev.len,
+            "download_slice: host buffer ({} elems) exceeds device slice ({} elems) — would read out of bounds",
+            host.len(),
+            dev.len
+        );
         let bytes = host.len() * std::mem::size_of::<T>();
 
         unsafe {
