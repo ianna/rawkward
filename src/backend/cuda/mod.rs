@@ -22,16 +22,23 @@ impl GpuBackend for CudaBackend {
     type DevSlice<T: Send + Sync> = DevSlice<T>;
     type KernelHandle = CudaKernelHandle;
 
-    unsafe fn alloc_slice<T: Copy + Send + Sync>(&self, _: usize) -> Self::DevSlice<T> {
-        unimplemented!("CUDA backend not implemented")
+    unsafe fn alloc_slice<T: Copy + Send + Sync>(
+        &self,
+        _: usize,
+    ) -> Result<Self::DevSlice<T>, GpuError> {
+        Err(GpuError::CudaError("CUDA backend not implemented".into()))
     }
 
-    fn upload_slice<T: Copy + Send + Sync>(&self, _: &[T]) -> Self::DevSlice<T> {
-        unimplemented!("CUDA backend not implemented")
+    fn upload_slice<T: Copy + Send + Sync>(&self, _: &[T]) -> Result<Self::DevSlice<T>, GpuError> {
+        Err(GpuError::CudaError("CUDA backend not implemented".into()))
     }
 
-    fn download_slice<T: Copy + Send + Sync>(&self, _: &Self::DevSlice<T>, _: &mut [T]) {
-        unimplemented!("CUDA backend not implemented")
+    fn download_slice<T: Copy + Send + Sync>(
+        &self,
+        _: &Self::DevSlice<T>,
+        _: &mut [T],
+    ) -> Result<(), GpuError> {
+        Err(GpuError::CudaError("CUDA backend not implemented".into()))
     }
 
     fn get_kernel(&self, name: &str) -> Result<Self::KernelHandle, String> {
@@ -46,8 +53,8 @@ impl GpuBackend for CudaBackend {
         _: (u32, u32, u32),
         _: (u32, u32, u32),
         _: &[*mut std::ffi::c_void],
-    ) {
-        unimplemented!("CUDA backend not implemented")
+    ) -> Result<(), GpuError> {
+        Err(GpuError::CudaError("CUDA backend not implemented".into()))
     }
 
     fn stream(&self) -> &GpuStream {

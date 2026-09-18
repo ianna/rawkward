@@ -9,7 +9,7 @@ pub mod hip_bindings {
 use std::ffi::c_void;
 use std::ptr;
 
-use crate::backend::{DevSlice, GpuBackend, GpuStream};
+use crate::backend::{DevSlice, GpuBackend, GpuError, GpuStream};
 
 use hip_bindings::{
     hipError_t_hipSuccess, hipFree, hipFunction_t, hipMalloc, hipMemcpy,
@@ -36,24 +36,26 @@ pub struct HipBackend {
 static HIP_MODULE_BYTES: &[u8] = include_bytes!(env!("RAWKWARD_HIP_MODULE_PATH"));
 
 impl HipBackend {
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self, GpuError> {
         unsafe {
             let mut module: hipModule_t = std::mem::zeroed();
             let res = hipModuleLoadData(&mut module, HIP_MODULE_BYTES.as_ptr() as *const _);
             if res != hipError_t_hipSuccess {
-                panic!("hipModuleLoadData failed: {}", res);
+                return Err(GpuError::HipError(format!(
+                    "hipModuleLoadData failed: {res}"
+                )));
             }
 
             let mut raw_stream: hipStream_t = std::mem::zeroed();
             let res = hipStreamCreate(&mut raw_stream);
             if res != hipError_t_hipSuccess {
-                panic!("hipStreamCreate failed: {}", res);
+                return Err(GpuError::HipError(format!("hipStreamCreate failed: {res}")));
             }
 
-            Self {
+            Ok(Self {
                 module,
                 stream: GpuStream::Hip(raw_stream),
-            }
+            })
         }
     }
 }
@@ -73,28 +75,34 @@ impl GpuBackend for HipBackend {
     type DevSlice<T: Send + Sync> = DevSlice<T>;
     type KernelHandle = HipKernelHandle;
 
-    unsafe fn alloc_slice<T: Copy + Send + Sync>(&self, len: usize) -> Self::DevSlice<T> {
+    unsafe fn alloc_slice<T: Copy + Send + Sync>(
+        &self,
+        len: usize,
+    ) -> Result<Self::DevSlice<T>, GpuError> {
         let bytes = len * std::mem::size_of::<T>();
         let mut ptr: *mut c_void = ptr::null_mut();
 
         unsafe {
             let res = hipMalloc(&mut ptr, bytes);
             if res != hipError_t_hipSuccess {
-                panic!("hipMalloc failed: {}", res);
+                return Err(GpuError::HipError(format!("hipMalloc failed: {res}")));
             }
         }
 
-        DevSlice::new(ptr, len, hip_free)
+        Ok(DevSlice::new(ptr, len, hip_free))
     }
 
-    fn upload_slice<T: Copy + Send + Sync>(&self, host: &[T]) -> Self::DevSlice<T> {
+    fn upload_slice<T: Copy + Send + Sync>(
+        &self,
+        host: &[T],
+    ) -> Result<Self::DevSlice<T>, GpuError> {
         let bytes = host.len() * std::mem::size_of::<T>();
         let mut ptr: *mut c_void = ptr::null_mut();
 
         unsafe {
             let res = hipMalloc(&mut ptr, bytes);
             if res != hipError_t_hipSuccess {
-                panic!("hipMalloc failed: {}", res);
+                return Err(GpuError::HipError(format!("hipMalloc failed: {res}")));
             }
 
             let res = hipMemcpy(
@@ -105,14 +113,20 @@ impl GpuBackend for HipBackend {
             );
             if res != hipError_t_hipSuccess {
                 hipFree(ptr);
-                panic!("hipMemcpy HostToDevice failed: {}", res);
+                return Err(GpuError::HipError(format!(
+                    "hipMemcpy HostToDevice failed: {res}"
+                )));
             }
         }
 
-        DevSlice::new(ptr, host.len(), hip_free)
+        Ok(DevSlice::new(ptr, host.len(), hip_free))
     }
 
-    fn download_slice<T: Copy + Send + Sync>(&self, dev: &Self::DevSlice<T>, host: &mut [T]) {
+    fn download_slice<T: Copy + Send + Sync>(
+        &self,
+        dev: &Self::DevSlice<T>,
+        host: &mut [T],
+    ) -> Result<(), GpuError> {
         let bytes = host.len() * std::mem::size_of::<T>();
 
         unsafe {
@@ -123,9 +137,13 @@ impl GpuBackend for HipBackend {
                 hipMemcpyKind_hipMemcpyDeviceToHost,
             );
             if res != hipError_t_hipSuccess {
-                panic!("hipMemcpy DeviceToHost failed: {}", res);
+                return Err(GpuError::HipError(format!(
+                    "hipMemcpy DeviceToHost failed: {res}"
+                )));
             }
         }
+
+        Ok(())
     }
 
     fn get_kernel(&self, name: &str) -> Result<Self::KernelHandle, String> {
@@ -149,10 +167,14 @@ impl GpuBackend for HipBackend {
         grid: (u32, u32, u32),
         block: (u32, u32, u32),
         args: &[*mut c_void],
-    ) {
+    ) -> Result<(), GpuError> {
         let stream = match self.stream {
             GpuStream::Hip(s) => s,
-            _ => panic!("HIP backend used with non-HIP stream"),
+            _ => {
+                return Err(GpuError::HipError(
+                    "HIP backend used with non-HIP stream".into(),
+                ));
+            }
         };
 
         unsafe {
@@ -171,9 +193,13 @@ impl GpuBackend for HipBackend {
             );
 
             if res != hipError_t_hipSuccess {
-                panic!("hipModuleLaunchKernel failed: {}", res);
+                return Err(GpuError::HipError(format!(
+                    "hipModuleLaunchKernel failed: {res}"
+                )));
             }
         }
+
+        Ok(())
     }
 
     fn stream(&self) -> &GpuStream {

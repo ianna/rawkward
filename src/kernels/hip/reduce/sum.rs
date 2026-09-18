@@ -58,7 +58,6 @@ pub fn segmented_sum_f32<B: GpuBackend>(
         n_segments
     );
     unsafe { backend.launch(&kernel, (blocks(n_segments), 1, 1), (BLOCK, 1, 1), &args) }
-    Ok(())
 }
 
 /// Sum `f64` data per segment.
@@ -84,7 +83,6 @@ pub fn segmented_sum_f64<B: GpuBackend>(
         n_segments
     );
     unsafe { backend.launch(&kernel, (blocks(n_segments), 1, 1), (BLOCK, 1, 1), &args) }
-    Ok(())
 }
 
 /// Sum `i32` data per segment.
@@ -108,7 +106,6 @@ pub fn segmented_sum_i32<B: GpuBackend>(
         n_segments
     );
     unsafe { backend.launch(&kernel, (blocks(n_segments), 1, 1), (BLOCK, 1, 1), &args) }
-    Ok(())
 }
 
 /// Sum `i64` data per segment.
@@ -132,5 +129,4 @@ pub fn segmented_sum_i64<B: GpuBackend>(
         n_segments
     );
     unsafe { backend.launch(&kernel, (blocks(n_segments), 1, 1), (BLOCK, 1, 1), &args) }
-    Ok(())
 }

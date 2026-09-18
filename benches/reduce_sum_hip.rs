@@ -197,14 +197,14 @@ fn run() {
         // H2D upload + kernel dispatch + D2H download; hipFree on drop.
         let gpu_rnd = time_iters(
             || {
-                let dev_data = backend.upload_slice(&data);
-                let dev_offsets = backend.upload_slice(&offsets);
-                let mut dev_out = unsafe { backend.alloc_slice::<f32>(k) };
+                let dev_data = backend.upload_slice(&data).unwrap();
+                let dev_offsets = backend.upload_slice(&offsets).unwrap();
+                let mut dev_out = unsafe { backend.alloc_slice::<f32>(k) }.unwrap();
                 segmented_sum_f32(&backend, &dev_data, &dev_offsets, &mut dev_out, k as i64)
                     .expect("HIP reduce_sum_f32 round-trip failed");
                 // hipMemcpy (synchronous on null stream) — ordered after the
                 // async kernel launch, so no explicit hipDeviceSynchronize needed.
-                backend.download_slice(&dev_out, &mut out_host);
+                backend.download_slice(&dev_out, &mut out_host).unwrap();
                 // DevSlices drop here → hipFree
             },
             WARMUP,
@@ -212,15 +212,15 @@ fn run() {
         );
 
         // ── gpu_disp: pre-upload; per-iteration: dispatch + D2H ──────────
-        let dev_data = backend.upload_slice(&data);
-        let dev_offsets = backend.upload_slice(&offsets);
-        let mut dev_out = unsafe { backend.alloc_slice::<f32>(k) };
+        let dev_data = backend.upload_slice(&data).unwrap();
+        let dev_offsets = backend.upload_slice(&offsets).unwrap();
+        let mut dev_out = unsafe { backend.alloc_slice::<f32>(k) }.unwrap();
 
         let gpu_disp = time_iters(
             || {
                 segmented_sum_f32(&backend, &dev_data, &dev_offsets, &mut dev_out, k as i64)
                     .expect("HIP reduce_sum_f32 dispatch failed");
-                backend.download_slice(&dev_out, &mut out_host);
+                backend.download_slice(&dev_out, &mut out_host).unwrap();
             },
             WARMUP,
             ITERS,
@@ -251,27 +251,27 @@ fn run() {
         // ── gpu_rnd ────────────────────────────────────────────────────────
         let gpu_rnd = time_iters(
             || {
-                let dev_data = backend.upload_slice(&data);
-                let dev_offsets = backend.upload_slice(&offsets);
-                let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
+                let dev_data = backend.upload_slice(&data).unwrap();
+                let dev_offsets = backend.upload_slice(&offsets).unwrap();
+                let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) }.unwrap();
                 segmented_sum_i64(&backend, &dev_data, &dev_offsets, &mut dev_out, k as i64)
                     .expect("HIP reduce_sum_i64 round-trip failed");
-                backend.download_slice(&dev_out, &mut out_host);
+                backend.download_slice(&dev_out, &mut out_host).unwrap();
             },
             WARMUP,
             ITERS,
         );
 
         // ── gpu_disp ───────────────────────────────────────────────────────
-        let dev_data = backend.upload_slice(&data);
-        let dev_offsets = backend.upload_slice(&offsets);
-        let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
+        let dev_data = backend.upload_slice(&data).unwrap();
+        let dev_offsets = backend.upload_slice(&offsets).unwrap();
+        let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) }.unwrap();
 
         let gpu_disp = time_iters(
             || {
                 segmented_sum_i64(&backend, &dev_data, &dev_offsets, &mut dev_out, k as i64)
                     .expect("HIP reduce_sum_i64 dispatch failed");
-                backend.download_slice(&dev_out, &mut out_host);
+                backend.download_slice(&dev_out, &mut out_host).unwrap();
             },
             WARMUP,
             ITERS,
