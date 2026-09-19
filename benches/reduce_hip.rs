@@ -109,9 +109,9 @@ fn bench_reduce_argmax(c: &mut Criterion) {
         // ── hip ──────────────────────────────────────────────────────────────
         #[cfg(all(feature = "hip", hip_rocm))]
         {
-            let dev_data = backend.upload_slice::<i64>(&data);
-            let dev_offsets = backend.upload_slice::<i64>(&offsets);
-            let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
+            let dev_data = backend.upload_slice::<i64>(&data).unwrap();
+            let dev_offsets = backend.upload_slice::<i64>(&offsets).unwrap();
+            let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) }.unwrap();
             let mut out_host = vec![0i64; k];
 
             group.bench_with_input(BenchmarkId::new("hip", &label), &(), |b, _| {
@@ -126,7 +126,9 @@ fn bench_reduce_argmax(c: &mut Criterion) {
                             k as i64,
                         )
                         .expect("HIP reduce_argmax_i64 failed");
-                        backend.download_slice(&dev_out, black_box(&mut out_host));
+                        backend
+                            .download_slice(&dev_out, black_box(&mut out_host))
+                            .unwrap();
                     },
                     BatchSize::SmallInput,
                 )
@@ -172,9 +174,9 @@ fn bench_reduce_argmin(c: &mut Criterion) {
 
         #[cfg(all(feature = "hip", hip_rocm))]
         {
-            let dev_data = backend.upload_slice::<i64>(&data);
-            let dev_offsets = backend.upload_slice::<i64>(&offsets);
-            let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
+            let dev_data = backend.upload_slice::<i64>(&data).unwrap();
+            let dev_offsets = backend.upload_slice::<i64>(&offsets).unwrap();
+            let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) }.unwrap();
             let mut out_host = vec![0i64; k];
 
             group.bench_with_input(BenchmarkId::new("hip", &label), &(), |b, _| {
@@ -189,7 +191,9 @@ fn bench_reduce_argmin(c: &mut Criterion) {
                             k as i64,
                         )
                         .expect("HIP reduce_argmin_i64 failed");
-                        backend.download_slice(&dev_out, black_box(&mut out_host));
+                        backend
+                            .download_slice(&dev_out, black_box(&mut out_host))
+                            .unwrap();
                     },
                     BatchSize::SmallInput,
                 )
@@ -232,8 +236,8 @@ fn bench_reduce_count(c: &mut Criterion) {
 
         #[cfg(all(feature = "hip", hip_rocm))]
         {
-            let dev_offsets = backend.upload_slice::<i64>(&offsets);
-            let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
+            let dev_offsets = backend.upload_slice::<i64>(&offsets).unwrap();
+            let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) }.unwrap();
             let mut out_host = vec![0i64; k];
 
             group.bench_with_input(BenchmarkId::new("hip", &label), &(), |b, _| {
@@ -247,7 +251,9 @@ fn bench_reduce_count(c: &mut Criterion) {
                             k as i64,
                         )
                         .expect("HIP reduce_count failed");
-                        backend.download_slice(&dev_out, black_box(&mut out_host));
+                        backend
+                            .download_slice(&dev_out, black_box(&mut out_host))
+                            .unwrap();
                     },
                     BatchSize::SmallInput,
                 )
@@ -297,9 +303,9 @@ fn bench_reduce_countnonzero(c: &mut Criterion) {
 
         #[cfg(all(feature = "hip", hip_rocm))]
         {
-            let dev_data = backend.upload_slice::<i64>(&data);
-            let dev_offsets = backend.upload_slice::<i64>(&offsets);
-            let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
+            let dev_data = backend.upload_slice::<i64>(&data).unwrap();
+            let dev_offsets = backend.upload_slice::<i64>(&offsets).unwrap();
+            let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) }.unwrap();
             let mut out_host = vec![0i64; k];
 
             group.bench_with_input(BenchmarkId::new("hip", &label), &(), |b, _| {
@@ -314,7 +320,9 @@ fn bench_reduce_countnonzero(c: &mut Criterion) {
                             k as i64,
                         )
                         .expect("HIP reduce_countnonzero_i64 failed");
-                        backend.download_slice(&dev_out, black_box(&mut out_host));
+                        backend
+                            .download_slice(&dev_out, black_box(&mut out_host))
+                            .unwrap();
                     },
                     BatchSize::SmallInput,
                 )
@@ -361,9 +369,9 @@ fn bench_reduce_max(c: &mut Criterion) {
 
         #[cfg(all(feature = "hip", hip_rocm))]
         {
-            let dev_data = backend.upload_slice::<i64>(&data);
-            let dev_offsets = backend.upload_slice::<i64>(&offsets);
-            let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
+            let dev_data = backend.upload_slice::<i64>(&data).unwrap();
+            let dev_offsets = backend.upload_slice::<i64>(&offsets).unwrap();
+            let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) }.unwrap();
             let mut out_host = vec![0i64; k];
 
             group.bench_with_input(BenchmarkId::new("hip", &label), &(), |b, _| {
@@ -378,7 +386,9 @@ fn bench_reduce_max(c: &mut Criterion) {
                             k as i64,
                         )
                         .expect("HIP reduce_max_i64 failed");
-                        backend.download_slice(&dev_out, black_box(&mut out_host));
+                        backend
+                            .download_slice(&dev_out, black_box(&mut out_host))
+                            .unwrap();
                     },
                     BatchSize::SmallInput,
                 )
@@ -425,9 +435,9 @@ fn bench_reduce_min(c: &mut Criterion) {
 
         #[cfg(all(feature = "hip", hip_rocm))]
         {
-            let dev_data = backend.upload_slice::<i64>(&data);
-            let dev_offsets = backend.upload_slice::<i64>(&offsets);
-            let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
+            let dev_data = backend.upload_slice::<i64>(&data).unwrap();
+            let dev_offsets = backend.upload_slice::<i64>(&offsets).unwrap();
+            let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) }.unwrap();
             let mut out_host = vec![0i64; k];
 
             group.bench_with_input(BenchmarkId::new("hip", &label), &(), |b, _| {
@@ -442,7 +452,9 @@ fn bench_reduce_min(c: &mut Criterion) {
                             k as i64,
                         )
                         .expect("HIP reduce_min_i64 failed");
-                        backend.download_slice(&dev_out, black_box(&mut out_host));
+                        backend
+                            .download_slice(&dev_out, black_box(&mut out_host))
+                            .unwrap();
                     },
                     BatchSize::SmallInput,
                 )
@@ -488,9 +500,9 @@ fn bench_reduce_prod(c: &mut Criterion) {
 
         #[cfg(all(feature = "hip", hip_rocm))]
         {
-            let dev_data = backend.upload_slice::<i64>(&data);
-            let dev_offsets = backend.upload_slice::<i64>(&offsets);
-            let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
+            let dev_data = backend.upload_slice::<i64>(&data).unwrap();
+            let dev_offsets = backend.upload_slice::<i64>(&offsets).unwrap();
+            let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) }.unwrap();
             let mut out_host = vec![0i64; k];
 
             group.bench_with_input(BenchmarkId::new("hip", &label), &(), |b, _| {
@@ -505,7 +517,9 @@ fn bench_reduce_prod(c: &mut Criterion) {
                             k as i64,
                         )
                         .expect("HIP reduce_prod_i64 failed");
-                        backend.download_slice(&dev_out, black_box(&mut out_host));
+                        backend
+                            .download_slice(&dev_out, black_box(&mut out_host))
+                            .unwrap();
                     },
                     BatchSize::SmallInput,
                 )
@@ -551,9 +565,9 @@ fn bench_reduce_sum(c: &mut Criterion) {
 
         #[cfg(all(feature = "hip", hip_rocm))]
         {
-            let dev_data = backend.upload_slice::<i64>(&data);
-            let dev_offsets = backend.upload_slice::<i64>(&offsets);
-            let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) };
+            let dev_data = backend.upload_slice::<i64>(&data).unwrap();
+            let dev_offsets = backend.upload_slice::<i64>(&offsets).unwrap();
+            let mut dev_out = unsafe { backend.alloc_slice::<i64>(k) }.unwrap();
             let mut out_host = vec![0i64; k];
 
             group.bench_with_input(BenchmarkId::new("hip", &label), &(), |b, _| {
@@ -568,7 +582,9 @@ fn bench_reduce_sum(c: &mut Criterion) {
                             k as i64,
                         )
                         .expect("HIP reduce_sum_i64 failed");
-                        backend.download_slice(&dev_out, black_box(&mut out_host));
+                        backend
+                            .download_slice(&dev_out, black_box(&mut out_host))
+                            .unwrap();
                     },
                     BatchSize::SmallInput,
                 )

@@ -97,19 +97,22 @@ impl GpuBackend for MetalBackend {
     type DevSlice<T: Send + Sync> = DevSlice<T>;
     type KernelHandle = MetalKernelHandle;
 
-    unsafe fn alloc_slice<T: Copy + Send + Sync>(&self, len: usize) -> Self::DevSlice<T> {
+    unsafe fn alloc_slice<T: Copy + Send + Sync>(
+        &self,
+        len: usize,
+    ) -> Result<Self::DevSlice<T>, GpuError> {
         let bytes = len * std::mem::size_of::<T>();
 
         // Metal's newBufferWithLength:0 returns a Buffer whose underlying
         // Objective-C object has a null internal pointer; dropping it panics in
         // metal-0.29.  Return an empty DevSlice with no Metal allocation instead.
         if bytes == 0 {
-            return DevSlice::new_with_free_data(
+            return Ok(DevSlice::new_with_free_data(
                 std::ptr::null_mut(),
                 0,
                 std::ptr::null_mut(),
                 metal_free, // metal_free is a no-op for null free_data
-            );
+            ));
         }
 
         let buffer = self
@@ -123,21 +126,29 @@ impl GpuBackend for MetalBackend {
         // DevSlice is dropped, at which point `metal_free` runs.
         let free_data = Box::into_raw(Box::new(MetalAllocation { _buffer: buffer })) as *mut c_void;
 
-        DevSlice::new_with_free_data(payload_ptr, len, free_data, metal_free)
+        Ok(DevSlice::new_with_free_data(
+            payload_ptr,
+            len,
+            free_data,
+            metal_free,
+        ))
     }
 
-    fn upload_slice<T: Copy + Send + Sync>(&self, host: &[T]) -> Self::DevSlice<T> {
+    fn upload_slice<T: Copy + Send + Sync>(
+        &self,
+        host: &[T],
+    ) -> Result<Self::DevSlice<T>, GpuError> {
         let bytes = std::mem::size_of_val(host);
 
         // Same zero-length guard as alloc_slice: Metal returns a null-backed
         // Buffer for a 0-byte request, which panics on drop in metal-0.29.
         if bytes == 0 {
-            return DevSlice::new_with_free_data(
+            return Ok(DevSlice::new_with_free_data(
                 std::ptr::null_mut(),
                 0,
                 std::ptr::null_mut(),
                 metal_free,
-            );
+            ));
         }
 
         // metal 0.29 has no `new_buffer_with_bytes` (copying variant).  Allocate
@@ -157,10 +168,19 @@ impl GpuBackend for MetalBackend {
 
         let free_data = Box::into_raw(Box::new(MetalAllocation { _buffer: buffer })) as *mut c_void;
 
-        DevSlice::new_with_free_data(payload_ptr, host.len(), free_data, metal_free)
+        Ok(DevSlice::new_with_free_data(
+            payload_ptr,
+            host.len(),
+            free_data,
+            metal_free,
+        ))
     }
 
-    fn download_slice<T: Copy + Send + Sync>(&self, dev: &Self::DevSlice<T>, host: &mut [T]) {
+    fn download_slice<T: Copy + Send + Sync>(
+        &self,
+        dev: &Self::DevSlice<T>,
+        host: &mut [T],
+    ) -> Result<(), GpuError> {
         // With StorageModeShared the GPU and CPU share the same physical pages;
         // no explicit blit / DMA is needed — a plain memcpy suffices.
         // Guard against a shorter source so we never read past `dev.len`.
@@ -169,11 +189,12 @@ impl GpuBackend for MetalBackend {
         // zero-length copy (Rust reference: "even if count is 0, the pointers
         // must be valid").  Zero-length DevSlices carry a null ptr, so skip.
         if copy_len == 0 {
-            return;
+            return Ok(());
         }
         unsafe {
             std::ptr::copy_nonoverlapping(dev.ptr as *const T, host.as_mut_ptr(), copy_len);
         }
+        Ok(())
     }
 
     fn get_kernel(&self, name: &str) -> Result<Self::KernelHandle, String> {
@@ -188,7 +209,7 @@ impl GpuBackend for MetalBackend {
         _grid: (u32, u32, u32),
         _block: (u32, u32, u32),
         _args: &[*mut c_void],
-    ) {
+    ) -> Result<(), GpuError> {
         // TODO: Metal dispatch via ComputeCommandEncoder.
         //
         // Metal binds arguments as MTLBuffers or inline bytes rather than raw
@@ -204,7 +225,11 @@ impl GpuBackend for MetalBackend {
         //   encoder.end_encoding();
         //   cmd_buf.commit();
         //   cmd_buf.wait_until_completed();
-        todo!("Metal kernel launch: implement buffer binding via ComputeCommandEncoder")
+        Err(GpuError::MetalError(
+            "Metal kernel launch not implemented: buffer binding via \
+             ComputeCommandEncoder is still TODO"
+                .into(),
+        ))
     }
 
     fn stream(&self) -> &GpuStream {

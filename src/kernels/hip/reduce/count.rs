@@ -28,5 +28,4 @@ pub fn segmented_count<B: GpuBackend>(
         .map_err(GpuError::HipError)?;
     hip_args!(args; offsets.as_device_ptr(), out.as_device_ptr(), n_segments);
     unsafe { backend.launch(&kernel, (blocks(n_segments), 1, 1), (BLOCK, 1, 1), &args) }
-    Ok(())
 }

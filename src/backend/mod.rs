@@ -49,7 +49,7 @@ impl Backend {
             #[cfg(all(feature = "hip", hip_rocm))]
             BackendKind::Hip => Ok(Self {
                 kind,
-                inner: BackendInner::Hip(HipBackend::new()),
+                inner: BackendInner::Hip(HipBackend::new()?),
             }),
             BackendKind::Cuda => Ok(Self {
                 kind,

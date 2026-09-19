@@ -266,16 +266,16 @@ mod tests {
     macro_rules! round_trip {
         ($backend:expr, $data:expr, $offsets:expr, $n:expr, $fn:ident, $T:ty) => {{
             let b = &$backend;
-            let data_dev = b.upload_slice::<$T>($data);
-            let offsets_dev = b.upload_slice::<i64>($offsets);
-            let mut out_dev = unsafe { b.alloc_slice::<$T>($n as usize) };
+            let data_dev = b.upload_slice::<$T>($data).unwrap();
+            let offsets_dev = b.upload_slice::<i64>($offsets).unwrap();
+            let mut out_dev = unsafe { b.alloc_slice::<$T>($n as usize) }.unwrap();
             unsafe {
                 {
                     $fn(b, &data_dev, &offsets_dev, &mut out_dev, $n).unwrap()
                 };
             }
             let mut out = vec![<$T>::default(); $n as usize];
-            b.download_slice(&out_dev, &mut out);
+            b.download_slice(&out_dev, &mut out).unwrap();
             out
         }};
     }
@@ -298,9 +298,9 @@ mod tests {
         let backend = make_backend();
         let data = [1.5f64, 2.5, 3.0];
         let offsets = [0i64, 3];
-        let data_dev = backend.upload_slice::<f64>(&data);
-        let offsets_dev = backend.upload_slice::<i64>(&offsets);
-        let mut out_dev = unsafe { backend.alloc_slice::<f64>(1) };
+        let data_dev = backend.upload_slice::<f64>(&data).unwrap();
+        let offsets_dev = backend.upload_slice::<i64>(&offsets).unwrap();
+        let mut out_dev = unsafe { backend.alloc_slice::<f64>(1) }.unwrap();
         let result = { segmented_sum_f64(&backend, &data_dev, &offsets_dev, &mut out_dev, 1) };
         assert!(result.is_err(), "expected Err for unsupported f64, got Ok");
         let msg = result.unwrap_err();

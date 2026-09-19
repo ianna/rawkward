@@ -36,7 +36,6 @@ pub fn segmented_argmin_f32<B: GpuBackend>(
         .map_err(GpuError::HipError)?;
     hip_args!(args; data.as_device_ptr(), offsets.as_device_ptr(), out.as_device_ptr(), n_segments);
     unsafe { backend.launch(&kernel, (blocks(n_segments), 1, 1), (BLOCK, 1, 1), &args) }
-    Ok(())
 }
 
 pub fn segmented_argmin_f64<B: GpuBackend>(
@@ -54,7 +53,6 @@ pub fn segmented_argmin_f64<B: GpuBackend>(
         .map_err(GpuError::HipError)?;
     hip_args!(args; data.as_device_ptr(), offsets.as_device_ptr(), out.as_device_ptr(), n_segments);
     unsafe { backend.launch(&kernel, (blocks(n_segments), 1, 1), (BLOCK, 1, 1), &args) }
-    Ok(())
 }
 
 pub fn segmented_argmin_i32<B: GpuBackend>(
@@ -72,7 +70,6 @@ pub fn segmented_argmin_i32<B: GpuBackend>(
         .map_err(GpuError::HipError)?;
     hip_args!(args; data.as_device_ptr(), offsets.as_device_ptr(), out.as_device_ptr(), n_segments);
     unsafe { backend.launch(&kernel, (blocks(n_segments), 1, 1), (BLOCK, 1, 1), &args) }
-    Ok(())
 }
 
 pub fn segmented_argmin_i64<B: GpuBackend>(
@@ -90,5 +87,4 @@ pub fn segmented_argmin_i64<B: GpuBackend>(
         .map_err(GpuError::HipError)?;
     hip_args!(args; data.as_device_ptr(), offsets.as_device_ptr(), out.as_device_ptr(), n_segments);
     unsafe { backend.launch(&kernel, (blocks(n_segments), 1, 1), (BLOCK, 1, 1), &args) }
-    Ok(())
 }

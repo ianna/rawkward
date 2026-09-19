@@ -125,9 +125,9 @@ fn gpu_argsort_jagged<B: GpuBackend>(
     offsets: &[i64],
     out: &mut [i64],
 ) -> Result<(), GpuError> {
-    let dev_values = backend.upload_slice(values);
-    let dev_offsets = backend.upload_slice(offsets);
-    let mut dev_out = unsafe { backend.alloc_slice::<i64>(values.len()) };
+    let dev_values = backend.upload_slice(values).unwrap();
+    let dev_offsets = backend.upload_slice(offsets).unwrap();
+    let mut dev_out = unsafe { backend.alloc_slice::<i64>(values.len()) }.unwrap();
 
     let nlists = (offsets.len() - 1) as i64;
     let total_size = values.len() as i64;
@@ -170,7 +170,7 @@ fn gpu_argsort_jagged<B: GpuBackend>(
         (256, 1, 1),
     )?;
 
-    backend.download_slice(&dev_out, out);
+    backend.download_slice(&dev_out, out).unwrap();
     Ok(())
 }
 

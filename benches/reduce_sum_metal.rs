@@ -146,9 +146,9 @@ fn bench_reduce_sum_f32(c: &mut Criterion) {
         #[cfg(target_os = "macos")]
         let (data_dev, offsets_dev, mut out_dev) = if let Some(ref b) = backend {
             use rawkward::backend::GpuBackend;
-            let d = b.upload_slice(&data);
-            let o = b.upload_slice(&offsets);
-            let out = unsafe { b.alloc_slice::<f32>(k) };
+            let d = b.upload_slice(&data).unwrap();
+            let o = b.upload_slice(&offsets).unwrap();
+            let out = unsafe { b.alloc_slice::<f32>(k) }.unwrap();
             (Some(d), Some(o), Some(out))
         } else {
             (None, None, None)
@@ -224,9 +224,9 @@ fn bench_reduce_sum_i64(c: &mut Criterion) {
         #[cfg(target_os = "macos")]
         let (data_dev, offsets_dev, mut out_dev) = if let Some(ref b) = backend {
             use rawkward::backend::GpuBackend;
-            let d = b.upload_slice(&data);
-            let o = b.upload_slice(&offsets);
-            let out = unsafe { b.alloc_slice::<i64>(k) };
+            let d = b.upload_slice(&data).unwrap();
+            let o = b.upload_slice(&offsets).unwrap();
+            let out = unsafe { b.alloc_slice::<i64>(k) }.unwrap();
             (Some(d), Some(o), Some(out))
         } else {
             (None, None, None)
@@ -324,9 +324,9 @@ fn bench_reduce_sum_f32_roundtrip(c: &mut Criterion) {
                 b.iter_batched_ref(
                     || (),
                     |_| {
-                        let data_dev = backend.upload_slice(black_box(&data));
-                        let offsets_dev = backend.upload_slice(black_box(&offsets));
-                        let mut out_dev = unsafe { backend.alloc_slice::<f32>(k) };
+                        let data_dev = backend.upload_slice(black_box(&data)).unwrap();
+                        let offsets_dev = backend.upload_slice(black_box(&offsets)).unwrap();
+                        let mut out_dev = unsafe { backend.alloc_slice::<f32>(k) }.unwrap();
                         unsafe {
                             segmented_sum_f32(
                                 &backend,
@@ -337,7 +337,9 @@ fn bench_reduce_sum_f32_roundtrip(c: &mut Criterion) {
                             )
                             .expect("Metal reduce_sum_f32 alloc roundtrip failed");
                         }
-                        backend.download_slice(&out_dev, black_box(&mut out_host));
+                        backend
+                            .download_slice(&out_dev, black_box(&mut out_host))
+                            .unwrap();
                     },
                     BatchSize::SmallInput,
                 )
@@ -362,9 +364,9 @@ fn bench_reduce_sum_f32_roundtrip(c: &mut Criterion) {
         //   • `offsets_dev` is read-only for the GPU and never written
         //     during a bench iteration, so no data races arise.
         {
-            let data_dev = backend.upload_slice(&data);
-            let offsets_dev = backend.upload_slice(&offsets);
-            let mut out_dev = unsafe { backend.alloc_slice::<f32>(k) };
+            let data_dev = backend.upload_slice(&data).unwrap();
+            let offsets_dev = backend.upload_slice(&offsets).unwrap();
+            let mut out_dev = unsafe { backend.alloc_slice::<f32>(k) }.unwrap();
 
             // Raw CPU pointers into the unified memory buffers.
             let src_ptr: *const f32 = data.as_ptr(); // host source

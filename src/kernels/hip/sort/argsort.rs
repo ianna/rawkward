@@ -43,7 +43,6 @@ pub fn argsort_small<B: GpuBackend>(
     );
 
     unsafe { backend.launch(&kernel, grid, block, &args) }
-    Ok(())
 }
 
 pub fn argsort_medium<B: GpuBackend>(
@@ -70,7 +69,6 @@ pub fn argsort_medium<B: GpuBackend>(
     );
 
     unsafe { backend.launch(&kernel, grid, block, &args) }
-    Ok(())
 }
 
 pub fn argsort_large<B: GpuBackend>(
@@ -97,5 +95,4 @@ pub fn argsort_large<B: GpuBackend>(
     );
 
     unsafe { backend.launch(&kernel, grid, block, &args) }
-    Ok(())
 }
