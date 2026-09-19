@@ -122,7 +122,11 @@ impl GpuBackend for HipBackend {
         Ok(DevSlice::new(ptr, host.len(), hip_free))
     }
 
-    fn download_slice<T: Copy + Send + Sync>(&self, dev: &Self::DevSlice<T>, host: &mut [T]) {
+    fn download_slice<T: Copy + Send + Sync>(
+        &self,
+        dev: &Self::DevSlice<T>,
+        host: &mut [T],
+    ) -> Result<(), GpuError> {
         assert!(
             host.len() <= dev.len,
             "download_slice: host buffer ({} elems) exceeds device slice ({} elems) — would read out of bounds",
