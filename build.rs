@@ -11,6 +11,7 @@ fn main() {
     let python_feature = env::var("CARGO_FEATURE_PYTHON").is_ok();
     let bench_cxx_feature = env::var("CARGO_FEATURE_BENCH_CXX").is_ok();
     let hip_feature = env::var("CARGO_FEATURE_HIP").is_ok();
+    let cuda_feature = env::var("CARGO_FEATURE_CUDA").is_ok();
 
     // 1. macOS dynamic Python linking
     if python_feature && target_os == "macos" {
@@ -34,12 +35,30 @@ fn main() {
         }
     }
 
-    // 3. Optional C++ benchmark kernels
+    // 3. CUDA kernel compilation + bindings (mirrors the HIP path above).
+    // Declare cuda_toolkit as a known cfg name so rustc's check-cfg lint accepts it.
+    println!("cargo::rustc-check-cfg=cfg(cuda_toolkit)");
+    if cuda_feature {
+        let cuda_available = detect_cuda();
+        println!("cargo:rustc-env=RAWKWARD_CUDA_AVAILABLE={}", cuda_available);
+        if cuda_available {
+            println!("cargo:warning=CUDA detected — enabling NVIDIA GPU kernels");
+            println!("cargo:rustc-cfg=cuda_toolkit");
+            compile_cuda_kernels();
+            generate_cuda_bindings();
+        } else {
+            println!(
+                "cargo:warning=CUDA feature enabled but toolkit not found — building without CUDA kernels"
+            );
+        }
+    }
+
+    // 4. Optional C++ benchmark kernels
     if bench_cxx_feature {
         compile_awkward_bench_cxx();
     }
 
-    // 4. Rebuild triggers
+    // 5. Rebuild triggers
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=Cargo.toml");
     println!("cargo:rerun-if-changed=src/kernels/metal/kernels.metal");
@@ -47,6 +66,166 @@ fn main() {
     // registered inside compile_awkward_bench_cxx when bench-cxx is on.
     println!("cargo:rerun-if-env-changed=HIP_PATH");
     println!("cargo:rerun-if-env-changed=ROCM_PATH");
+    println!("cargo:rerun-if-env-changed=CUDA_PATH");
+    println!("cargo:rerun-if-env-changed=CUDA_HOME");
+    println!("cargo:rerun-if-env-changed=RAWKWARD_CUDA_ARCH");
+}
+
+// ---------------------------------------------------------------------------
+// CUDA detection
+// ---------------------------------------------------------------------------
+
+fn cuda_root() -> String {
+    env::var("CUDA_PATH")
+        .or_else(|_| env::var("CUDA_HOME"))
+        .unwrap_or_else(|_| "/usr/local/cuda".to_string())
+}
+
+fn detect_cuda() -> bool {
+    let nvcc_exists = Command::new("which")
+        .arg("nvcc")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false);
+
+    let root = cuda_root();
+    let headers_exist = Path::new(&format!("{root}/include/cuda.h")).exists();
+
+    nvcc_exists && headers_exist
+}
+
+// ---------------------------------------------------------------------------
+// CUDA kernel compilation (unity build → .fatbin)
+// ---------------------------------------------------------------------------
+
+fn compile_cuda_kernels() {
+    let root = cuda_root();
+    let cuda_include = format!("{root}/include");
+    // 64-bit driver/runtime libs live under lib64 on Linux, lib/x64 on Windows.
+    let cuda_lib = if Path::new(&format!("{root}/lib64")).exists() {
+        format!("{root}/lib64")
+    } else {
+        format!("{root}/lib")
+    };
+    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+
+    let mut cuda_files: Vec<String> = Vec::new();
+    collect_cuda_files("src/kernels/cuda", &mut cuda_files);
+    cuda_files.sort(); // deterministic include order
+
+    if cuda_files.is_empty() {
+        panic!("No .cu files found under src/kernels/cuda/");
+    }
+
+    // Unity translation unit so nvcc gets a single input (mirrors the HIP path).
+    let unity_path = out_dir.join("_all_cuda_kernels.cu");
+    {
+        use std::io::Write;
+        let mut f = fs::File::create(&unity_path).unwrap();
+        for file in &cuda_files {
+            let abs = fs::canonicalize(file).unwrap_or_else(|_| PathBuf::from(file));
+            writeln!(f, "#include \"{}\"", abs.display()).unwrap();
+        }
+    }
+
+    let fatbin_path = out_dir.join("rawkward_cuda_kernels.fatbin");
+    let mut cmd = Command::new("nvcc");
+    cmd.args([
+        "--fatbin",
+        "-O3",
+        "--std=c++17",
+        &format!("-I{cuda_include}"),
+    ]);
+    // Optional arch override, e.g. RAWKWARD_CUDA_ARCH="native" (build host GPU),
+    // or "sm_80" (A100), "sm_90" (H100). Left to nvcc's default otherwise.
+    if let Ok(arch) = env::var("RAWKWARD_CUDA_ARCH") {
+        cmd.arg(format!("-arch={arch}"));
+    }
+    let status = cmd
+        .arg(&unity_path)
+        .args(["-o", fatbin_path.to_str().unwrap()])
+        .status()
+        .expect("nvcc --fatbin failed to launch");
+
+    if !status.success() {
+        panic!("nvcc --fatbin failed — check that all CUDA kernel sources compile cleanly");
+    }
+
+    println!(
+        "cargo:rustc-env=RAWKWARD_CUDA_MODULE_PATH={}",
+        fatbin_path.display()
+    );
+    println!("cargo:rustc-link-search=native={cuda_lib}");
+    // Link the CUDA Driver API library (libcuda), not the runtime.
+    println!("cargo:rustc-link-lib=dylib=cuda");
+}
+
+/// Recursively collect `.cu` sources under `dir`, emitting rerun-if-changed.
+fn collect_cuda_files(dir: &str, out: &mut Vec<String>) {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_cuda_files(path.to_str().unwrap(), out);
+        } else if path.extension().is_some_and(|e| e == "cu") {
+            let s = path.to_str().unwrap().to_string();
+            println!("cargo:rerun-if-changed={}", s);
+            out.push(s);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// bindgen: CUDA Driver API bindings
+// ---------------------------------------------------------------------------
+
+fn generate_cuda_bindings() {
+    let root = cuda_root();
+    let cuda_include = format!("{root}/include");
+
+    let bindings = bindgen::Builder::default()
+        .header(format!("{cuda_include}/cuda.h"))
+        .clang_arg(format!("-I{cuda_include}"))
+        // Driver-API symbols only.
+        .allowlist_function("cu.*")
+        .allowlist_type("CU.*")
+        .allowlist_type("cudaError_enum")
+        .allowlist_var("CU.*")
+        .layout_tests(false)
+        .raw_line("pub mod cuda_bindings {")
+        .raw_line("    #![allow(non_camel_case_types)]")
+        .raw_line("    #![allow(non_snake_case)]")
+        .raw_line("    #![allow(non_upper_case_globals)]")
+        .raw_line("    #![allow(dead_code)]")
+        .raw_line("    #![allow(unsafe_op_in_unsafe_fn)]")
+        .raw_line("    #![allow(improper_ctypes)]")
+        .raw_line("    #![allow(improper_ctypes_definitions)]")
+        .raw_line("    #![allow(clippy::all)]")
+        .generate_inline_functions(true)
+        .trust_clang_mangling(false)
+        .use_core()
+        .generate()
+        .expect("Unable to generate CUDA bindings");
+
+    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("cuda_bindings.rs");
+    bindings
+        .write_to_file(&out_path)
+        .expect("Couldn't write CUDA bindings");
+
+    // Close the `pub mod cuda_bindings { … }` wrapper opened via raw_line.
+    {
+        use std::fs::OpenOptions;
+        use std::io::Write;
+        let mut f = OpenOptions::new().append(true).open(&out_path).unwrap();
+        writeln!(f, "}}").unwrap();
+    }
+
+    println!(
+        "cargo:rustc-env=RAWKWARD_CUDA_BINDINGS={}",
+        out_path.display()
+    );
 }
 
 // ---------------------------------------------------------------------------
