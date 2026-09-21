@@ -45,6 +45,7 @@ fn main() {
             println!("cargo:warning=CUDA detected — enabling NVIDIA GPU kernels");
             println!("cargo:rustc-cfg=cuda_toolkit");
             compile_cuda_kernels();
+            compile_cuda_compute();
             generate_cuda_bindings();
         } else {
             println!(
@@ -161,6 +162,72 @@ fn compile_cuda_kernels() {
 }
 
 /// Recursively collect `.cu` sources under `dir`, emitting rerun-if-changed.
+// ---------------------------------------------------------------------------
+// CCCL/CUB compute path (option B): compile src/kernels/cuda_compute/reduce.cu
+// into a static lib and link it with the CUDA runtime (cudart), which CUB uses.
+//
+// Unlike compile_cuda_kernels (which builds a *fatbin* of __global__ kernels
+// loaded at runtime via the Driver API), these are host functions that call CUB
+// `DeviceSegmentedReduce`. They must be linked into the crate directly, so we
+// build a static archive with `nvcc --lib`. CUB headers ship inside the CUDA
+// toolkit include dir, so no extra dependency is needed.
+// ---------------------------------------------------------------------------
+fn compile_cuda_compute() {
+    let root = cuda_root();
+    let cuda_include = format!("{root}/include");
+    let cuda_lib = if Path::new(&format!("{root}/lib64")).exists() {
+        format!("{root}/lib64")
+    } else {
+        format!("{root}/lib")
+    };
+    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+
+    let src = "src/kernels/cuda_compute/reduce.cu";
+    if !Path::new(src).exists() {
+        panic!("cuda_compute source not found: {src}");
+    }
+
+    let lib_path = out_dir.join("libcuda_compute.a");
+    let mut cmd = Command::new("nvcc");
+    cmd.args([
+        "--lib",
+        "-O3",
+        "--std=c++17",
+        // CUB's iterators/functors rely on constexpr host/device interop and
+        // (for some versions) extended lambdas; enable both to be safe.
+        "--expt-relaxed-constexpr",
+        "--expt-extended-lambda",
+        // The archive is linked into a cdylib, so device+host objects need PIC.
+        "-Xcompiler",
+        "-fPIC",
+        &format!("-I{cuda_include}"),
+    ]);
+    if let Ok(arch) = env::var("RAWKWARD_CUDA_ARCH") {
+        cmd.arg(format!("-arch={arch}"));
+    }
+    let status = cmd
+        .arg(src)
+        .args(["-o", lib_path.to_str().unwrap()])
+        .status()
+        .expect("nvcc --lib failed to launch for cuda_compute");
+    if !status.success() {
+        panic!(
+            "nvcc --lib failed for {src} — check that the CUB segmented-reduce wrappers compile cleanly"
+        );
+    }
+
+    println!("cargo:rustc-link-search=native={}", out_dir.display());
+    println!("cargo:rustc-link-lib=static=cuda_compute");
+    // CUB's host wrappers call the CUDA runtime (cudaMallocAsync, cudaGetLastError, …).
+    println!("cargo:rustc-link-search=native={cuda_lib}");
+    println!("cargo:rustc-link-lib=dylib=cudart");
+    // nvcc-produced C++ objects reference the C++ runtime.
+    println!("cargo:rustc-link-lib=dylib=stdc++");
+
+    println!("cargo:rerun-if-changed=src/kernels/cuda_compute/reduce.cu");
+    println!("cargo:rerun-if-changed=src/kernels/cuda_compute/cccl_common.cuh");
+}
+
 fn collect_cuda_files(dir: &str, out: &mut Vec<String>) {
     let Ok(entries) = fs::read_dir(dir) else {
         return;

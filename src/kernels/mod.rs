@@ -14,6 +14,11 @@
 pub mod cpu;
 pub mod cuda;
 
+// CCCL/CUB reducers (option B). Only present when build.rs found the CUDA
+// toolkit and compiled `src/kernels/cuda_compute/reduce.cu`.
+#[cfg(cuda_toolkit)]
+pub mod cuda_compute;
+
 #[cfg(all(feature = "hip", hip_rocm))]
 pub mod hip;
 

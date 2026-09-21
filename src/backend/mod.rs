@@ -2,6 +2,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 pub mod cuda;
+// CCCL/CUB backend (option B): reuses CudaBackend's device resources. Only
+// present when build.rs set cfg(cuda_toolkit).
+#[cfg(cuda_toolkit)]
+pub mod cuda_compute;
 pub mod device_slice;
 pub mod error;
 #[cfg(all(feature = "hip", hip_rocm))]
@@ -16,6 +20,8 @@ pub use stream::GpuStream;
 pub use traits::GpuBackend;
 
 pub use cuda::CudaBackend;
+#[cfg(cuda_toolkit)]
+pub use cuda_compute::CudaComputeBackend;
 pub use error::GpuError;
 #[cfg(all(feature = "hip", hip_rocm))]
 pub use hip::HipBackend;
