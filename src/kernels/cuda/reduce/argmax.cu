@@ -1,32 +1,40 @@
+// Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
+#include <cuda_runtime.h>
 
-def awkward_reduce_argmin(
-    toptr,
-    fromptr,
-    offsets,
-    paren,
-    starts,
-    outlength,
-):
-    index_dtype = parents_data.dtype
+template <typename T>
+__device__ inline void segmented_argmax_body(
+    const T* data, const long long* offsets, long long* out,
+    long long n_segments, long long seg)
+{
+    if (seg >= n_segments) return;
+    long long start = offsets[seg], end = offsets[seg + 1];
+    if (end <= start) { out[seg] = -1; return; }
+    T best_val = data[start];
+    long long best_idx = start;
+    for (long long i = start + 1; i < end; ++i) {
+        T v = data[i];
+        if (v > best_val) { best_val = v; best_idx = i; }
+    }
+    out[seg] = best_idx;
+}
 
-    def segment_reduce_argmin(segment_id):
-        start_idx = start_o[segment_id]
-        end_idx = end_o[segment_id]
-        segment = input_data[start_idx:end_idx]
-        if len(segment) == 0:
-            return -1
-        # return a global index
-        return np.argmin(segment) + start_idx
+extern "C" __global__ void segmented_argmax_f32(
+    const float* data, const long long* offsets, long long* out, long long n_segments)
+{ long long seg = (long long)blockIdx.x * blockDim.x + threadIdx.x;
+  segmented_argmax_body(data, offsets, out, n_segments, seg); }
 
-    start_o = offsets[:-1]
-    end_o = offsets[1:]
+extern "C" __global__ void segmented_argmax_f64(
+    const double* data, const long long* offsets, long long* out, long long n_segments)
+{ long long seg = (long long)blockIdx.x * blockDim.x + threadIdx.x;
+  segmented_argmax_body(data, offsets, out, n_segments, seg); }
 
-    # Perform the segmented reduce
-    # type_wrapper is always cp.int64
-    type_wrapper = cp.dtype(index_dtype).type
-    segment_ids = CountingIterator(type_wrapper(0))
-    # TODO: try using segmented_reduce instead when https://github.com/NVIDIA/cccl/issues/6171 is fixed
-    unary_transform(
-        d_in=segment_ids, d_out=result, op=segment_reduce_argmin, num_items=outlength
-    )
+extern "C" __global__ void segmented_argmax_i32(
+    const int* data, const long long* offsets, long long* out, long long n_segments)
+{ long long seg = (long long)blockIdx.x * blockDim.x + threadIdx.x;
+  segmented_argmax_body(data, offsets, out, n_segments, seg); }
+
+extern "C" __global__ void segmented_argmax_i64(
+    const long long* data, const long long* offsets, long long* out, long long n_segments)
+{ long long seg = (long long)blockIdx.x * blockDim.x + threadIdx.x;
+  segmented_argmax_body(data, offsets, out, n_segments, seg); }

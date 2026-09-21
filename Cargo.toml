@@ -20,6 +20,13 @@ default = ["python"]
 python = ["dep:pyo3", "pyo3/extension-module"]
 hip = []
 
+# NVIDIA CUDA backend. Off by default. When enabled, build.rs looks for the
+# CUDA toolkit (nvcc + driver); if found it compiles src/kernels/cuda/**/*.cu
+# into a fatbin, generates Driver-API bindings, and sets cfg(cuda_toolkit) so
+# the real backend (src/backend/cuda/imp_real.rs) is used. Without a toolkit
+# the crate still builds (stub backend), same as with `hip`.
+cuda = []
+
 # Opt-in for Rust binaries / tests that *embed* a Python interpreter
 # (e.g. `cargo test --features auto-initialize`). Requires libpython on
 # the linker path — set PYO3_PYTHON to the interpreter you want to link

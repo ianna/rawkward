@@ -1,63 +1,20 @@
 // Copyright (c) 2026 Ianna Osborne
 // SPDX-License-Identifier: BSD-3-Clause
 
-use crate::backend::GpuStream;
-use crate::backend::{DevSlice, GpuBackend, GpuError};
+//! CUDA (NVIDIA) backend.
+//!
+//! `build.rs` emits `cfg(cuda_toolkit)` only when it detected the CUDA toolkit
+//! (nvcc + the driver library) and compiled the kernels + generated bindings.
+//! When present we use the real Driver-API backend; otherwise we fall back to
+//! a stub whose `new()` returns an error, so the crate still builds on hosts
+//! without CUDA (identical behavior to before this backend existed).
 
-pub struct CudaBackend {
-    stream: GpuStream,
-}
+#[cfg(cuda_toolkit)]
+mod imp_real;
+#[cfg(cuda_toolkit)]
+pub use imp_real::{CudaBackend, CudaKernelHandle, cuda_bindings};
 
-/// Placeholder — CUDA is not yet implemented.
-/// Satisfies the KernelHandle associated type requirement.
-pub struct CudaKernelHandle;
-
-impl CudaBackend {
-    pub fn new() -> Result<Self, GpuError> {
-        Err(GpuError::CudaError("CUDA backend not implemented".into()))
-    }
-}
-
-impl GpuBackend for CudaBackend {
-    type DevSlice<T: Send + Sync> = DevSlice<T>;
-    type KernelHandle = CudaKernelHandle;
-
-    unsafe fn alloc_slice<T: Copy + Send + Sync>(
-        &self,
-        _: usize,
-    ) -> Result<Self::DevSlice<T>, GpuError> {
-        Err(GpuError::CudaError("CUDA backend not implemented".into()))
-    }
-
-    fn upload_slice<T: Copy + Send + Sync>(&self, _: &[T]) -> Result<Self::DevSlice<T>, GpuError> {
-        Err(GpuError::CudaError("CUDA backend not implemented".into()))
-    }
-
-    fn download_slice<T: Copy + Send + Sync>(
-        &self,
-        _: &Self::DevSlice<T>,
-        _: &mut [T],
-    ) -> Result<(), GpuError> {
-        Err(GpuError::CudaError("CUDA backend not implemented".into()))
-    }
-
-    fn get_kernel(&self, name: &str) -> Result<Self::KernelHandle, String> {
-        Err(format!(
-            "CUDA backend not implemented (requested kernel: {name})"
-        ))
-    }
-
-    unsafe fn launch(
-        &self,
-        _: &Self::KernelHandle,
-        _: (u32, u32, u32),
-        _: (u32, u32, u32),
-        _: &[*mut std::ffi::c_void],
-    ) -> Result<(), GpuError> {
-        Err(GpuError::CudaError("CUDA backend not implemented".into()))
-    }
-
-    fn stream(&self) -> &GpuStream {
-        &self.stream
-    }
-}
+#[cfg(not(cuda_toolkit))]
+mod imp_stub;
+#[cfg(not(cuda_toolkit))]
+pub use imp_stub::{CudaBackend, CudaKernelHandle};
